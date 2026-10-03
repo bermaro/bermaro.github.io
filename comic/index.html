@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+<base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Comic-Scanner</title>
@@ -10,68 +11,2469 @@
 <meta name="theme-color" content="#1f3a5f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
 <style>
-  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f2f4f8; color: #1d2733; }
-  .lade { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; text-align: center; }
-  .kreis { width: 42px; height: 42px; border: 4px solid #d6dde8; border-top-color: #1f3a5f; border-radius: 50%; animation: drehen 1s linear infinite; }
-  @keyframes drehen { to { transform: rotate(360deg); } }
-  button { font-size: 16px; padding: 10px 18px; border-radius: 10px; border: 0; background: #1f3a5f; color: #fff; }
+  /* ---------- Grundfarben ---------- */
+  :root {
+    --blau: #1f3a5f; --blau2: #2d5a8e; --hellblau: #e8f0fa; --gelb: #ffd54f; --gruen: #2e7d32; --rot: #c62828;
+    --grau: #f2f4f7; --text: #1b1f24; --leise: #5f6b7a; --rand: #d6dbe1; --weiss: #ffffff; --lila: #6a3fb5; --helllila: #f1ebfb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--grau); color: var(--text); font-size: 15px; }
+  .versteckt { display: none !important; }
+  .klein { font-size: 13px; color: var(--leise); }
+
+  /* ---------- Kopf und Reiter ---------- */
+  header { background: var(--blau); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 20; }
+  header h1 { font-size: 18px; margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header .version { font-size: 11px; opacity: .7; }
+  header button { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
+  .benutzer-chip { font-size: 13px; background: rgba(255,255,255,.18); border-radius: 14px; padding: 4px 10px; white-space: nowrap; }
+  header select.benutzer-wahl { width: auto; max-width: 150px; padding: 5px 8px; font-size: 13px; border-radius: 14px; background: rgba(255,255,255,.18); color: #fff; border: 1px solid rgba(255,255,255,.45); }
+  header select.benutzer-wahl option { color: #000; }
+  header.fremd { background: #b45309; }
+  .fremd-hinweis { background: #fff4e5; color: #7a3e00; border-bottom: 1px solid #f5c98b; padding: 8px 14px; font-size: 14px; text-align: center; }
+  .benutzer-zeile { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--grau); }
+  .benutzer-zeile:last-child { border-bottom: 0; }
+  .ohne-besitzer { display: inline-block; font-size: 11px; font-weight: 700; color: #8a6200; background: #fff8e1; border: 1px solid var(--gelb); border-radius: 10px; padding: 1px 6px; margin-left: 4px; }
+  nav { display: flex; background: var(--weiss); border-bottom: 1px solid var(--rand); position: sticky; top: 46px; z-index: 19; }
+  nav button { flex: 1; border: 0; background: none; padding: 12px 4px; font-size: 15px; color: var(--leise); border-bottom: 3px solid transparent; cursor: pointer; }
+  nav button.aktiv { color: var(--blau); border-bottom-color: var(--blau); font-weight: 700; }
+  main { padding: 12px 12px 110px; margin: 0 auto; }
+  main.eng { max-width: 680px; }
+  main.breit { max-width: 1400px; }
+
+  /* ---------- Karten, Knöpfe, Felder ---------- */
+  .karte { background: var(--weiss); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .karte h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .btn { display: inline-block; border: 0; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn.voll { display: block; width: 100%; margin-bottom: 10px; padding: 14px; font-size: 17px; }
+  .btn-haupt { background: var(--blau); color: #fff; }
+  .btn-gruen { background: var(--gruen); color: #fff; }
+  .btn-hell { background: var(--grau); color: var(--text); border: 1px solid var(--rand); }
+  .btn-rot { background: #fff; color: var(--rot); border: 1px solid var(--rot); }
+  .riesig { padding: 28px 14px !important; font-size: 21px !important; }
+  label { display: block; font-size: 13px; color: var(--leise); margin: 8px 0 3px; }
+  input[type=text], input[type=password], input[type=search], input[type=number], select, textarea {
+    width: 100%; padding: 10px; border: 1px solid var(--rand); border-radius: 10px; font-size: 16px; background: #fff; }
+  .reihe { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .reihe > .wachsen { flex: 1; min-width: 140px; width: auto; }
+  .rechts { margin-left: auto; }
+  a { color: var(--blau2); }
+
+  /* ---------- Erfassen ---------- */
+  .vorschau { width: 100%; max-height: 260px; object-fit: contain; border-radius: 10px; background: #000; }
+  .schalter { display: flex; align-items: center; gap: 10px; padding: 8px 2px; font-size: 15px; color: var(--text); margin: 0; }
+  .schalter input { width: 22px; height: 22px; }
+  .zustaende { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .zbtn { border: 2px solid var(--rand); background: #fff; border-radius: 10px; padding: 10px 4px; text-align: center; font-size: 15px; cursor: pointer; }
+  .zbtn b { display: block; font-size: 17px; }
+  .zbtn span { font-size: 11px; color: var(--leise); }
+  .zbtn.gewaehlt { border-color: var(--blau); background: var(--hellblau); }
+  .zbtn.ki-btn { grid-column: 1 / -1; background: #fff8e1; border-color: var(--gelb); }
+  .menge { display: flex; align-items: center; gap: 10px; }
+  .menge button { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--rand); background: #fff; font-size: 22px; cursor: pointer; }
+  .menge .zahl { font-size: 24px; font-weight: 700; min-width: 36px; text-align: center; }
+  .eintrag { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--grau); align-items: center; cursor: pointer; }
+  .eintrag:last-child { border-bottom: 0; }
+  .eintrag img { width: 52px; height: 70px; object-fit: cover; border-radius: 6px; background: var(--grau); flex-shrink: 0; }
+  .eintrag .info { flex: 1; min-width: 0; }
+  .eintrag .titel { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .eintrag .rechts { text-align: right; font-size: 13px; }
+  .chip { display: inline-block; border: 1px solid var(--rand); background: #fff; border-radius: 20px; padding: 6px 11px; font-size: 13px; cursor: pointer; margin: 3px 3px 0 0; }
+  .chip.an { background: var(--blau); border-color: var(--blau); color: #fff; }
+  .chip .anz { opacity: .7; font-size: 11px; margin-left: 3px; }
+  details summary { cursor: pointer; color: var(--blau2); font-weight: 600; padding: 6px 0; }
+  .st { font-size: 12px; font-weight: 600; }
+  .st-arbeit { color: var(--blau2); } .st-ok { color: var(--gruen); } .st-warn { color: #8a6200; } .st-fehler { color: var(--rot); }
+  .punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--blau2); margin-right: 5px; animation: puls 1s infinite; }
+  @keyframes puls { 50% { opacity: .2; } }
+  .zaehler { background: var(--blau2); color: #fff; border-radius: 12px; padding: 1px 9px; font-size: 13px; }
+
+  /* ---------- KI-Zähler und Preisschild-Frage (v1.6) ---------- */
+  .ki-anzeige { margin-top: 12px; padding: 10px 12px; background: var(--hellblau); border-radius: 10px; font-size: 13px; cursor: pointer; }
+  .ki-spur { background: #fff; border-radius: 6px; height: 10px; overflow: hidden; margin-top: 6px; }
+  .ki-balken { height: 100%; border-radius: 6px; background: var(--gruen); min-width: 2px; }
+  .ki-balken.mittel { background: #f0a000; } .ki-balken.voll { background: var(--rot); }
+  .ki-details { margin-top: 8px; display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; }
+  .preis-karte { border: 2px solid var(--gelb); background: #fffbea; }
+  .preis-frage { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid #f3e3a6; flex-wrap: wrap; }
+  .preis-frage img { width: 46px; height: 62px; object-fit: cover; border-radius: 6px; background: var(--grau); flex-shrink: 0; }
+  .preis-frage .info { flex: 1; min-width: 120px; }
+  .preis-frage .titel { font-weight: 600; }
+  .preis-frage .preis { font-size: 20px; font-weight: 700; color: var(--blau); }
+  .preis-frage .knoepfe { display: flex; gap: 6px; }
+  .preis-frage-detail { margin-top: 10px; padding: 10px; background: #fffbea; border: 2px solid var(--gelb); border-radius: 10px; }
+
+  /* ---------- Kennzahlen und Diagramme ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .kpi { background: var(--weiss); border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .kpi .wert { font-size: 21px; font-weight: 700; }
+  .kpi .was { font-size: 12px; color: var(--leise); margin-top: 2px; }
+  .kpi.plus .wert { color: var(--gruen); } .kpi.minus .wert { color: var(--rot); } .kpi.ki .wert { color: var(--lila); }
+  .diagramme { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .balken-zeile { display: grid; grid-template-columns: 120px 1fr 72px; gap: 8px; align-items: center; margin: 5px 0; cursor: pointer; }
+  .balken-zeile:hover .balken-name { color: var(--blau2); text-decoration: underline; }
+  .balken-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+  .balken-spur { background: var(--grau); border-radius: 6px; height: 16px; overflow: hidden; }
+  .balken { background: var(--blau2); height: 100%; border-radius: 6px; min-width: 2px; }
+  .balken-wert { text-align: right; font-size: 12px; }
+  .umschalter { display: inline-flex; background: var(--grau); border-radius: 8px; padding: 2px; }
+  .umschalter button { border: 0; background: none; padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; color: var(--leise); }
+  .umschalter button.aktiv { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.1); font-weight: 600; }
+
+  /* ---------- Sammlung: Filter, Tabelle, Kacheln ---------- */
+  .filter { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px 10px; }
+  .filter label { margin: 0 0 3px; font-size: 12px; }
+  .filter input, .filter select { padding: 8px; font-size: 14px; }
+  .von-bis { display: flex; gap: 6px; }
+  .check { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text); margin: 0; }
+  .leiste { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .tabelle-rahmen { overflow-x: auto; }
+  table.liste { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.liste th { text-align: left; font-size: 12px; color: var(--leise); padding: 8px 6px; border-bottom: 2px solid var(--rand); white-space: nowrap; cursor: pointer; user-select: none; background: #fff; }
+  table.liste td { padding: 5px 6px; border-bottom: 1px solid var(--grau); vertical-align: middle; }
+  table.liste tr.zeile { cursor: pointer; }
+  table.liste tr.zeile:hover td { background: var(--hellblau); }
+  .zahl { text-align: right !important; white-space: nowrap; }
+  td img.mini { width: 38px; height: 52px; object-fit: cover; border-radius: 4px; background: var(--grau); display: block; }
+  .zbadge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 12px; background: var(--hellblau); color: var(--blau); }
+  .plus { color: var(--gruen); } .minus { color: var(--rot); } .kifarbe { color: var(--lila); }
+  .kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .kachel { background: #fff; border: 1px solid var(--rand); border-radius: 12px; padding: 8px; cursor: pointer; }
+  .kachel:hover { border-color: var(--blau2); }
+  .kachel img { width: 100%; height: 190px; object-fit: cover; border-radius: 8px; background: var(--grau); display: block; }
+  .kachel .t { font-weight: 600; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Serien-Katalog ---------- */
+  .serie-zeile { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 12px; margin-bottom: 10px;
+    border: 1px solid var(--grau); border-radius: 14px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .serie-zeile.komplett { background: linear-gradient(90deg, #f3e8ff, #ede9fe); border-color: #c4b5fd; }
+  .serie-zeile .name { font-weight: 700; cursor: pointer; font-size: 17px; }
+  .serie-cover { width: 64px; height: 88px; object-fit: cover; border-radius: 6px; background: var(--grau); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 30px; }
+  .serie-zahl { font-weight: 700; color: var(--blau, #2563eb); margin-top: 4px; }
+  .serie-komplett { color: #6d28d9; font-weight: 700; font-size: 13px; margin-top: 4px; }
+  .aufl-zeile { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; padding: 6px 8px; background: #f8fafc; border-radius: 8px; font-size: 13px; }
+  .aufl-zeile .aufl-name { font-weight: 700; min-width: 110px; }
+  .aufl-zeile .fortschritt { flex: 1; min-width: 80px; margin-top: 0; height: 7px; }
+  .aufl-zeile .btn { padding: 4px 10px; font-size: 12px; }
+  .serie-gruppe-marke { display: inline-block; background: #ede9fe; color: #5b21b6; border-radius: 10px; padding: 1px 8px; font-size: 12px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+  .aufl-knoepfe { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .aufl-knoepfe button { border: 1px solid var(--linie, #e2e8f0); background: #fff; border-radius: 16px; padding: 4px 12px; cursor: pointer; font-size: 13px; }
+  .aufl-knoepfe button.aktiv { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
+  .fortschritt { background: var(--grau); border-radius: 8px; height: 10px; overflow: hidden; margin-top: 6px; }
+  .fortschritt div { background: linear-gradient(90deg, #4f46e5, #2563eb); height: 100%; border-radius: 8px; }
+  @media (max-width: 700px) { .serie-zeile { grid-template-columns: 56px 1fr; gap: 10px; } .serie-zeile .reihe { grid-column: 1/-1; } .serie-cover { width: 56px; height: 78px; } }
+  .kat-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; }
+  .kat-kachel { position: relative; background: #fff; border: 2px solid var(--rand); border-radius: 10px; padding: 6px; cursor: pointer; user-select: none; font-size: 12px; }
+  .kat-kachel img { width: 100%; height: 160px; object-fit: cover; border-radius: 6px; background: var(--grau); display: block; }
+  .kat-kachel .ohne-bild { height: 160px; border-radius: 6px; background: var(--grau); display: flex; align-items: center; justify-content: center; color: var(--leise); font-size: 28px; }
+  .kat-kachel .kb { font-weight: 700; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+  .kat-kachel .kz { color: var(--leise); height: 30px; overflow: hidden; line-height: 15px; }
+  .kat-kachel .kp { font-weight: 600; }
+  .kat-kachel.st-ja { border-color: var(--gruen); background: #f1f8f1; }
+  .kat-kachel.st-nummer { border-color: #9ccc65; background: #f7fbef; }
+  .kat-kachel.st-fehlt img { opacity: .55; filter: grayscale(60%); }
+  .kat-kachel.gewaehlt { border-color: var(--blau); box-shadow: 0 0 0 3px rgba(45,90,142,.35); }
+  .kat-kachel .haken { position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(255,255,255,.95); border: 2px solid var(--blau2); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; }
+  .kat-kachel.gewaehlt .haken { background: var(--blau); }
+  .kat-kachel .marke { position: absolute; top: 10px; right: 10px; border-radius: 10px; padding: 2px 7px; font-size: 11px; font-weight: 700; background: var(--gruen); color: #fff; }
+  .kat-kachel .marke.nummer { background: #7cb342; }
+  .kat-kachel .marke.fehlt { background: #fff; color: var(--rot); border: 1px solid var(--rot); }
+  .auswahl-leiste { position: fixed; left: 0; right: 0; bottom: 0; background: var(--blau); color: #fff; padding: 10px 14px; z-index: 25; box-shadow: 0 -2px 8px rgba(0,0,0,.2); }
+  .auswahl-leiste .innen { max-width: 1400px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .auswahl-leiste .btn-hell { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.4); }
+  .auswahl-leiste .panel { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-top: 6px; }
+  .auswahl-leiste .panel label { color: #dfe7f1; margin: 0 0 3px; }
+  .auswahl-leiste .panel select, .auswahl-leiste .panel input { width: 150px; padding: 7px; font-size: 14px; }
+
+  /* ---------- Detail-Fenster ---------- */
+  #detail { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; z-index: 40; overflow-y: auto; padding: 14px; }
+  #detail .inhalt { background: var(--grau); max-width: 820px; margin: 0 auto; border-radius: 16px; padding: 12px; }
+  .bilder { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+  .bilder figure { margin: 0; text-align: center; }
+  .bilder img { width: 100%; max-height: 340px; object-fit: contain; border-radius: 10px; background: #fff; }
+  .bilder figcaption { font-size: 12px; color: var(--leise); margin-top: 3px; }
+  .wertkarten { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+  .wertkarte { border-radius: 14px; padding: 14px; background: var(--hellblau); }
+  .wertkarte.ki { background: var(--helllila); }
+  .wertkarte .gross { font-size: 30px; font-weight: 800; color: var(--blau); }
+  .wertkarte.ki .gross { color: var(--lila); }
+  .wertkarte .was { font-size: 13px; font-weight: 600; }
+  .zahlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
+  .zahl-karte { background: var(--grau); border-radius: 10px; padding: 10px; }
+  .zahl-karte .wert { font-size: 18px; font-weight: 700; }
+  .zahl-karte .was { font-size: 12px; color: var(--leise); }
+  .felder { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0 12px; }
+  .preistab { border-collapse: collapse; margin-top: 10px; font-size: 13px; width: 100%; }
+  .preistab td { text-align: center; padding: 5px; border: 1px solid var(--rand); background: #fff; }
+  .preistab td.aktiv { background: #fff3c4; font-weight: 700; }
+  .info-liste { display: grid; grid-template-columns: 120px 1fr; gap: 3px 10px; font-size: 13px; margin-top: 8px; }
+  .info-liste div:nth-child(odd) { color: var(--leise); }
+
+  /* ---------- Meldung, Laden ---------- */
+  #toast { position: fixed; left: 12px; right: 12px; bottom: 16px; background: #222; color: #fff; padding: 14px; border-radius: 12px; font-size: 15px; display: none; z-index: 60; text-align: center; max-width: 560px; margin: 0 auto; }
+  #toast.fehler { background: var(--rot); }
+  #laden { position: fixed; inset: 0; background: rgba(255,255,255,.85); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 50; }
+  .kreis { width: 48px; height: 48px; border: 5px solid var(--rand); border-top-color: var(--blau); border-radius: 50%; animation: dreh 1s linear infinite; }
+  @keyframes dreh { to { transform: rotate(360deg); } }
+  #ladeText { margin-top: 12px; font-weight: 600; text-align: center; padding: 0 20px; }
 </style>
+<!-- Google Firebase: schnelle Datenbank (ab v1.8) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
-<!--
-  Comic-Scanner – Startseite auf GitHub Pages
-  Diese kleine Seite holt die eigentliche App aus dem Google-Skript (ohne Google-Anmeldung)
-  und merkt sie sich auf dem Gerät. Ab dem zweiten Öffnen startet die App sofort aus dem
-  Speicher; im Hintergrund wird die neueste Fassung für das nächste Öffnen geholt.
-  Die Daten selbst kommen aus Firebase und der Google-Tabelle. Ohne PIN kommt niemand an eine Sammlung.
-  WICHTIG: Hier keine globalen Namen anlegen (alles steckt in einer Klammer-Funktion),
-  sonst gibt es Namenskonflikte mit der geladenen App.
--->
-<div class="lade" id="lade">
-  <div style="font-size:48px">📚</div>
-  <div class="kreis"></div>
-  <div id="text">Comic-Scanner wird geladen …</div>
+
+<!-- ================= Anmeldung ================= -->
+<div id="anmeldung">
+  <header><h1>📚 Comic-Scanner</h1></header>
+  <main class="eng">
+    <div class="karte">
+      <h2>Anmelden</h2>
+      <label for="pin">PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN eingeben">
+      <div style="height:12px"></div>
+      <button class="btn btn-haupt voll" onclick="anmelden()">Weiter</button>
+      <p class="klein">Die PIN wird in der Tabelle unter 📚 Comics → 🔒 PIN festgelegt.</p>
+    </div>
+  </main>
 </div>
+
+<!-- ================= Haupt-App ================= -->
+<div id="app" class="versteckt">
+  <header>
+    <h1>📚 Comic-Scanner <span class="version" id="version"></span></h1>
+    <span id="benutzerChip" class="benutzer-chip"></span>
+    <select id="alsBenutzer" class="benutzer-wahl versteckt" title="Sammlung ansehen von …" onchange="alsWechseln()"></select>
+    <button id="btnBenutzer" class="versteckt" title="Benutzer verwalten" onclick="benutzerOeffnen()">👥</button>
+    <button onclick="abmelden()">Abmelden</button>
+  </header>
+  <div id="fremdHinweis" class="fremd-hinweis versteckt"></div>
+  <nav>
+    <button id="tab-erfassen" class="aktiv" onclick="zeigeTab('erfassen')">📷 Erfassen</button>
+    <button id="tab-sammlung" onclick="zeigeTab('sammlung')">📚 Sammlung</button>
+    <button id="tab-serien" onclick="zeigeTab('serien')">📖 Serien</button>
+    <button id="tab-werte" onclick="zeigeTab('werte')">📊 Werte</button>
+  </nav>
+
+  <main id="haupt" class="eng">
+    <!-- ======================= ERFASSEN ======================= -->
+    <section id="seite-erfassen">
+      <div id="schritt-foto">
+        <div id="preisFragen" class="karte preis-karte versteckt"></div>
+        <div class="karte">
+          <button class="btn btn-haupt voll riesig" onclick="document.getElementById('kamera').click()">📷 Comic fotografieren</button>
+          <button class="btn btn-hell voll" onclick="document.getElementById('galerie').click()">🖼️ Fotos aus der Galerie (mehrere möglich)</button>
+          <input id="kamera" type="file" accept="image/*" capture="environment" class="versteckt" onchange="fotosGewaehlt(this)">
+          <input id="galerie" type="file" accept="image/*" multiple class="versteckt" onchange="fotosGewaehlt(this)">
+          <label class="schalter"><input type="checkbox" id="schnellmodus" onchange="schnellmodusGeaendert()"> ⚡ Schnellmodus: sofort speichern, Zustand schätzt die KI</label>
+          <label for="ek-vorgabe">💶 Einkaufspreis je Heft in € (gilt für die nächsten Scans)</label>
+          <input id="ek-vorgabe" type="text" inputmode="decimal" value="0" onchange="ekVorgabeGeaendert()" onfocus="this.select()">
+          <p class="klein" style="margin-top:4px">💡 Klebt ein Preisschild auf dem Heft, erkennt die KI es und fragt dich, ob du es zu diesem Preis gekauft hast.</p>
+          <div id="kiAnzeige" class="ki-anzeige versteckt" onclick="kiDetailsUmschalten()" title="Antippen für Details"></div>
+          <p class="klein">Tipp: Heft flach auf einen ruhigen Untergrund legen, gutes Licht, kein Blitz. Das Foto wird danach automatisch zugeschnitten und gerade gedreht. Die ganze Serie erscheint danach unter 📖 Serien zum Abhaken.</p>
+        </div>
+        <div class="karte">
+          <h2>Letzte Scans <span class="zaehler versteckt" id="offenZaehler"></span></h2>
+          <div id="warteschlange" class="klein">Noch nichts gescannt.</div>
+        </div>
+        <div class="karte">
+          <details>
+            <summary>Letzte Buchungen (Protokoll)</summary>
+            <div id="buchungen" class="klein">–</div>
+          </details>
+        </div>
+      </div>
+
+      <div id="schritt-zustand" class="versteckt">
+        <div class="karte">
+          <img id="fotoVorschau" class="vorschau" alt="Foto">
+          <h2 style="margin-top:12px">Zustand antippen = speichern</h2>
+          <div id="zustandKnoepfe" class="zustaende"></div>
+        </div>
+        <div class="karte">
+          <label for="f-ek">💶 Einkaufspreis je Stück in € (vorher eintippen, dann Zustand antippen)</label>
+          <input id="f-ek" type="text" inputmode="decimal" placeholder="0" onfocus="this.select()">
+          <details>
+            <summary>Anzahl (falls mehrere gleiche Hefte)</summary>
+            <div class="menge">
+              <button onclick="mengeStellen(-1)">−</button>
+              <div class="zahl" id="menge">1</div>
+              <button onclick="mengeStellen(1)">+</button>
+            </div>
+          </details>
+        </div>
+        <button class="btn btn-hell voll" onclick="zustandAbbrechen()">✖ Foto verwerfen</button>
+      </div>
+    </section>
+
+    <!-- ======================= SAMMLUNG ======================= -->
+    <section id="seite-sammlung" class="versteckt">
+      <div class="karte">
+        <details id="filterBox" open>
+          <summary>🔎 Filter <span class="klein" id="trefferInfo"></span></summary>
+          <div class="filter" style="margin-top:8px">
+            <div><label>Suche (Titel, Zeichner, Notiz …)</label><input id="f-suche" type="search" placeholder="z. B. Obelix" oninput="neuZeichnen()"></div>
+            <div><label>Serie</label><select id="f-serie" onchange="neuZeichnen()"></select></div>
+            <div><label>Verlag</label><select id="f-verlag" onchange="neuZeichnen()"></select></div>
+            <div><label>Format</label><select id="f-format" onchange="neuZeichnen()"></select></div>
+            <div id="f-besitzerBox" class="versteckt"><label>Besitzer</label><select id="f-besitzer" onchange="neuZeichnen()"></select></div>
+            <div><label>Heft-Nr. von – bis</label><div class="von-bis"><input id="f-nrVon" type="number" placeholder="von" oninput="neuZeichnen()"><input id="f-nrBis" type="number" placeholder="bis" oninput="neuZeichnen()"></div></div>
+            <div><label>Jahr von – bis</label><div class="von-bis"><input id="f-jahrVon" type="number" placeholder="von" oninput="neuZeichnen()"><input id="f-jahrBis" type="number" placeholder="bis" oninput="neuZeichnen()"></div></div>
+            <div><label>Wert je Stück ab (€)</label><input id="f-wertAb" type="number" step="0.5" placeholder="z. B. 10" oninput="neuZeichnen()"></div>
+            <div><label>Wert-Quelle</label>
+              <select id="f-quelle" onchange="neuZeichnen()">
+                <option value="">alle</option>
+                <option value="Comic Guide">📖 Comic Guide (genauer Preis)</option>
+                <option value="Z1 × Faktor">📖 Z1 × Faktor</option>
+                <option value="KI-Schätzung">🤖 nur KI-Schätzung</option>
+                <option value="-">ohne Wert</option>
+              </select>
+            </div>
+            <div><label>Sortierung</label>
+              <select id="f-sort" onchange="sortWahl()">
+                <option value="serie">Serie + Heft-Nr.</option>
+                <option value="wertGes-ab">Wert gesamt (höchster zuerst)</option>
+                <option value="wertStk-ab">Wert je Stück (höchster zuerst)</option>
+                <option value="kiWertStk-ab">KI-Wert je Stück (höchster zuerst)</option>
+                <option value="gewinn-ab">Gewinn (höchster zuerst)</option>
+                <option value="jahr-auf">Jahr (älteste zuerst)</option>
+                <option value="jahr-ab">Jahr (neueste zuerst)</option>
+                <option value="angelegt-ab">Zuletzt erfasst</option>
+                <option value="menge-ab">Menge (meiste zuerst)</option>
+              </select>
+            </div>
+          </div>
+          <div class="klein" style="margin-top:10px">Zustand (mehrere möglich):</div>
+          <div id="f-zustaende"></div>
+          <div class="leiste">
+            <label class="check"><input type="checkbox" id="f-ohneZ1" onchange="neuZeichnen()"> nur ohne Comic-Guide-Preis</label>
+            <label class="check"><input type="checkbox" id="f-doppelt" onchange="neuZeichnen()"> nur doppelte (Menge ≥ 2)</label>
+            <label class="check"><input type="checkbox" id="f-unsicher" onchange="neuZeichnen()"> nur unsichere KI-Erkennung</label>
+            <label class="check"><input type="checkbox" id="f-offen" onchange="neuZeichnen()"> nur „zu prüfen“</label>
+          </div>
+        </details>
+        <div class="leiste">
+          <div class="umschalter"><button id="ansicht-tabelle" onclick="ansicht('tabelle')">☰ Tabelle</button><button id="ansicht-kacheln" onclick="ansicht('kacheln')">▦ Kacheln</button></div>
+          <button class="btn btn-hell" onclick="filterZuruecksetzen()">Filter zurücksetzen</button>
+          <button class="btn btn-hell" onclick="datenLaden().then(neuZeichnen)">🔄 Aktualisieren</button>
+          <button class="btn btn-hell" onclick="csvExport()">⬇️ CSV</button>
+          <span id="zuordnenBox" class="versteckt reihe"><select id="zuordnenZiel" style="width:auto"></select><button class="btn btn-hell" onclick="mehrZuordnen()">👤 Alle gefilterten verschieben</button></span>
+          <span class="rechts"></span>
+          <button class="btn btn-rot" onclick="mehrLoeschenFragen()">🗑️ Alle gefilterten löschen</button>
+        </div>
+        <div id="mehrLoeschFrage" class="versteckt" style="margin-top:12px;padding:12px;border:2px solid #c62828;border-radius:10px;background:#fff5f5">
+          <b id="mehrLoeschText"></b><br>
+          <span class="klein">Die Fotos wandern in den Drive-Papierkorb. Das kann in der App nicht rückgängig gemacht werden.</span><br>
+          <button class="btn btn-rot" style="margin-top:8px" onclick="mehrLoeschen()">Ja, alle diese Einträge löschen</button>
+          <button class="btn btn-hell" style="margin-top:8px" onclick="$('mehrLoeschFrage').classList.add('versteckt')">Abbrechen</button>
+        </div>
+      </div>
+      <div class="karte"><div class="tabelle-rahmen" id="liste">Lade …</div></div>
+    </section>
+
+    <!-- ======================= SERIEN ======================= -->
+    <section id="seite-serien" class="versteckt">
+      <div id="serien-uebersicht">
+        <div class="karte">
+          <h2>📖 Deine Serien</h2>
+          <p class="klein">Sobald ein Heft gescannt und im Comic Guide gefunden wurde, lädt die App automatisch die ganze Serie. Dann kannst du hier abhaken, welche Hefte du noch hast – ohne sie einzeln zu scannen.</p>
+          <div id="serienListe">Lade …</div>
+        </div>
+        <div class="karte">
+          <h2>➕ Weitere Serie aus dem Comic Guide holen</h2>
+          <div class="reihe">
+            <input id="katSuche" class="wachsen" type="search" placeholder="Serienname, z. B. Fix und Foxi" onkeydown="if(event.key==='Enter')katalogSuche()">
+            <button class="btn btn-haupt" onclick="katalogSuche()">Suchen</button>
+          </div>
+          <div id="katSuchErgebnis" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div id="serie-detail" class="versteckt">
+        <div class="karte">
+          <div class="reihe">
+            <button class="btn btn-hell" onclick="serieSchliessen()">← Alle Serien</button>
+            <h2 style="margin:0" id="serieTitel"></h2>
+            <span class="rechts"></span>
+            <button class="btn btn-hell" onclick="serieNeuLaden()">🔄</button>
+          </div>
+          <div id="serieInfo" class="klein" style="margin-top:6px"></div>
+          <div class="kpis" id="serieKpis" style="margin-top:10px"></div>
+          <div class="leiste" style="margin-top:0">
+            <div class="umschalter" id="katAnzeige">
+              <button data-a="alle" onclick="katAnzeige('alle')">Alle</button>
+              <button data-a="vorhanden" onclick="katAnzeige('vorhanden')">✓ Vorhanden</button>
+              <button data-a="fehlend" onclick="katAnzeige('fehlend')">✗ Fehlend</button>
+            </div>
+            <label class="check"><input type="checkbox" id="k-ohneSonder" checked onchange="katZeichnen(true)"> Nachdrucke, spätere Auflagen &amp; Sonderausgaben ausblenden</label>
+          </div>
+          <div class="filter" style="margin-top:10px">
+            <div><label>Suche (Titel)</label><input id="k-suche" type="search" placeholder="z. B. Gallier" oninput="katZeichnen(true)"></div>
+            <div><label>Nr. von – bis</label><div class="von-bis"><input id="k-nrVon" type="number" placeholder="von" oninput="katZeichnen(true)"><input id="k-nrBis" type="number" placeholder="bis" oninput="katZeichnen(true)"></div></div>
+            <div id="k-jahrBox"><label>Jahr von – bis</label><div class="von-bis"><input id="k-jahrVon" type="number" placeholder="von" oninput="katZeichnen(true)"><input id="k-jahrBis" type="number" placeholder="bis" oninput="katZeichnen(true)"></div></div>
+            <div><label>Preis Z1 ab (€)</label><input id="k-preisAb" type="number" step="0.5" placeholder="z. B. 5" oninput="katZeichnen(true)"></div>
+            <div><label>Sortierung</label>
+              <select id="k-sort" onchange="katZeichnen(true)">
+                <option value="pos">wie im Comic Guide</option>
+                <option value="nr">Nummer aufsteigend</option>
+                <option value="nr-ab">Nummer absteigend</option>
+                <option value="preis-ab">Preis (teuerste zuerst)</option>
+              </select>
+            </div>
+          </div>
+          <div class="leiste">
+            <button class="btn btn-hell" onclick="katAlleWaehlen()">☑ Alle angezeigten auswählen</button>
+            <button class="btn btn-hell" onclick="katFehlendeWaehlen()">☑ Nur fehlende davon auswählen</button>
+            <button class="btn btn-hell" onclick="katAuswahlAufheben()">☐ Auswahl aufheben</button>
+            <span class="klein">Tipp: Heft antippen = auswählen. Mit gedrückter Umschalt-Taste (⇧) einen ganzen Bereich auswählen.</span>
+          </div>
+          <div id="katTrefferInfo" class="klein" style="margin-top:8px"></div>
+        </div>
+        <div class="karte"><div id="katRaster" class="kat-raster"></div><div id="katMehr" style="text-align:center;margin-top:10px"></div></div>
+      </div>
+    </section>
+
+    <!-- ======================= WERTE ======================= -->
+    <section id="seite-werte" class="versteckt">
+      <div class="kpis" id="kpis"></div>
+      <div class="diagramme">
+        <div class="karte"><h2>Nach Zustand <span class="umschalter rechts" data-diagramm="zustand"></span></h2><div id="d-zustand"></div></div>
+        <div class="karte"><h2>Top-Serien <span class="umschalter rechts" data-diagramm="serie"></span></h2><div id="d-serie"></div></div>
+        <div class="karte"><h2>Nach Verlag <span class="umschalter rechts" data-diagramm="verlag"></span></h2><div id="d-verlag"></div></div>
+        <div class="karte"><h2>Nach Jahrzehnt <span class="umschalter rechts" data-diagramm="jahrzehnt"></span></h2><div id="d-jahrzehnt"></div></div>
+      </div>
+      <p class="klein">Tipp: Auf einen Balken tippen öffnet die Sammlung mit dem passenden Filter.</p>
+      <div class="karte"><h2>🏆 Wertvollste Ausgaben</h2><div id="topListe"></div></div>
+    </section>
+  </main>
+</div>
+
+<!-- Auswahl-Leiste im Serien-Katalog -->
+<div id="auswahlLeiste" class="auswahl-leiste versteckt">
+  <div class="innen">
+    <b id="auswahlText"></b>
+    <button class="btn btn-gruen" onclick="katEintragenPanel()">✅ Als vorhanden eintragen</button>
+    <button class="btn btn-hell" onclick="katEntfernenFragen()">❌ Aus Sammlung entfernen</button>
+    <button class="btn btn-hell" onclick="katAuswahlAufheben()">Auswahl aufheben</button>
+    <div id="eintragenPanel" class="panel versteckt">
+      <div><label>Zustand für alle</label><select id="k-zustand"></select></div>
+      <div><label>Einkaufspreis je Stück €</label><input id="k-ek" type="text" inputmode="decimal" value="0"></div>
+      <div><label>Anzahl je Heft</label><input id="k-menge" type="number" value="1" min="1"></div>
+      <button class="btn btn-gruen" onclick="katEintragen()">Jetzt eintragen</button>
+    </div>
+    <div id="entfernenPanel" class="panel versteckt">
+      <span id="entfernenText"></span>
+      <button class="btn btn-rot" onclick="katEntfernen()">Ja, entfernen</button>
+      <button class="btn btn-hell" onclick="$('entfernenPanel').classList.add('versteckt')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail-Fenster -->
+<div id="detail" onclick="if (event.target.id === 'detail') detailSchliessen()">
+  <div class="inhalt" id="detailInhalt"></div>
+</div>
+
+<datalist id="auflagen">
+  <option value="1. Auflage"><option value="2. Auflage"><option value="3. Auflage"><option value="4. Auflage"><option value="5. Auflage">
+  <option value="Nachdruck"><option value="Sonderausgabe"><option value="Variant-Cover">
+</datalist>
+
+<div id="laden"><div class="kreis"></div><div id="ladeText">Bitte warten …</div></div>
+<div id="toast"></div>
+
 <script>
-(function () {
-  // Adresse der Google-Web-App (Comic-Scanner)
-  var adresse = 'https://script.google.com/macros/s/AKfycbwlho_JTqSD5Wi21htidEj8wiJG2CLamkvDMlwva1TSPyRz4b82oV5MHX601NeHgVjC/exec';
-  var SCHLUESSEL = 'comicScannerApp';
+// ==========================================================
+//  Zustand der App
+// ==========================================================
+const APP = {
+  pin: '',
+  zustaende: [],          // [Code, Bezeichnung, Faktor, Beschreibung]
+  menge: 1,
+  wartend: [],            // Fotos, die auf "Zustand antippen" warten
+  detail: null,           // Eintrag im Detail-Fenster
+  daten: [],              // alle Comics der Sammlung
+  benutzer: { name: '', admin: false },   // wessen Sammlung gerade gezeigt wird
+  verwalter: false,       // true = Bernd (darf alles sehen und Hefte verschieben)
+  eigenerName: '',        // Name des Angemeldeten selbst
+  echtePin: '',           // die eigene PIN (APP.pin enthält beim Verwalter evtl. "PIN>Name")
+  namen: [],              // alle Benutzernamen (für den Verwalter)
+  datenAlt: true,         // true = beim nächsten Öffnen neu laden
+  fb: false,              // true = Daten kommen live aus Firebase (schnell)
+  tab: 'erfassen',
+  filterZustand: {},
+  sortSpalte: 'serie',
+  sortAuf: true,
+  ansicht: window.innerWidth < 760 ? 'kacheln' : 'tabelle',
+  diagrammMass: { zustand: 'hefte', serie: 'hefte', verlag: 'wert', jahrzehnt: 'hefte' },
+  balken: {},
+  aktuell: [],
+  kat: { serien: [], serie: null, hefte: [], auswahl: {}, anzeige: 'alle', zeigen: 200, gefiltert: [], letzter: null, timer: null, suche: [], entfernen: [], gruppen: {}, auflage: '' }
+};
 
-  var gespeichert = '';
-  try { gespeichert = localStorage.getItem(SCHLUESSEL) || ''; } catch (e) { gespeichert = ''; }
+// Warteschlange beim Erfassen: hochladen -> KI erkennt -> fertig
+const Q = { liste: [], uploads: 0, erkennungen: 0, zaehler: 0 };
+const MAX_UPLOADS = 2, MAX_ERKENNUNGEN = 2;
 
-  function zeigen(html) {
-    document.open();
-    document.write(html);
-    document.close();
+// ----- Hilfsfunktionen -----
+function $(id) { return document.getElementById(id); }
+function esc(t) {
+  return String(t === undefined || t === null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function zahl(v) { return (typeof v === 'number' && !isNaN(v)) ? v : null; }
+function euro(z) {
+  if (z === '' || z === null || z === undefined || isNaN(z)) return '–';
+  return Number(z).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+}
+function ganzeZahl(t) { const m = String(t || '').match(/\d+/); return m ? parseInt(m[0], 10) : null; }
+function speicherLesen(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function speicherSchreiben(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) { /* egal */ } }
+
+// Server-Funktion aufrufen (gibt ein Promise zurück)
+// Läuft die Seite direkt bei Google (Apps Script) oder woanders (z. B. GitHub Pages)?
+const IN_GOOGLE = !!(window.google && google.script && google.script.run);
+// Adresse der Google-Web-App – wird nur benutzt, wenn die Seite außerhalb von Google läuft
+const API_URL = 'https://script.google.com/macros/s/AKfycbwlho_JTqSD5Wi21htidEj8wiJG2CLamkvDMlwva1TSPyRz4b82oV5MHX601NeHgVjC/exec';
+// ==========================================================
+//  FIREBASE (ab v1.8): Lesen direkt aus der schnellen Datenbank
+//  Sammlung, Serien und KI-Zähler kommen live aus Firebase.
+//  Speichern läuft weiter über das Google-Skript; das Skript
+//  überträgt jede Änderung sofort nach Firebase.
+// ==========================================================
+const FB_KONFIG = {
+  apiKey: 'AIzaSyCuYeh9iVmHGdkl41vqBxJZMJlcbgNcEzU',
+  authDomain: 'comic-scanner-d0afe.firebaseapp.com',
+  projectId: 'comic-scanner-d0afe',
+  storageBucket: 'comic-scanner-d0afe.firebasestorage.app',
+  messagingSenderId: '572800688735',
+  appId: '1:572800688735:web:3d1b812626c5450aa731ea'
+};
+const FB = { an: false, auth: null, db: null, profil: null, pin: '', teile: {}, alle: [], serien: {}, ki: null, app: null, abos: [], bereit: null, bereitOk: null, timer: null };
+try {
+  if (window.firebase) {
+    firebase.initializeApp(FB_KONFIG);
+    FB.auth = firebase.auth();
+    FB.db = firebase.firestore();
+    // Daten zusätzlich auf dem Gerät speichern -> beim nächsten Öffnen sofort da
+    try { FB.db.enablePersistence({ synchronizeTabs: true }).catch(function () { /* egal */ }); } catch (e) { /* egal */ }
+    FB.an = true;
   }
+} catch (e) { FB.an = false; }
 
-  // Neueste Fassung holen und für das nächste Öffnen merken
-  var holen = fetch(adresse + '?roh=1', { redirect: 'follow', cache: 'no-store' })
-    .then(function (r) {
-      if (!r.ok) throw new Error('Fehler ' + r.status);
-      return r.text();
-    })
-    .then(function (html) {
-      if (html.indexOf('Comic-Scanner') < 0) throw new Error('Antwort unbekannt');
-      try { localStorage.setItem(SCHLUESSEL, html); } catch (e) { /* Speicher voll – egal */ }
-      return html;
-    });
+// Anmelde-Adresse und Passwort zur PIN (das Skript rechnet genauso)
+function fbEmail(pin) {
+  const daten = new TextEncoder().encode('comic-scanner:' + pin);
+  return crypto.subtle.digest('SHA-256', daten).then(function (b) {
+    const hex = Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    return 'u' + hex.slice(0, 24) + '@bermaro-comics.de';
+  });
+}
+function fbPasswort(pin) { return 'Comic#' + pin + '#Scanner'; }
 
-  if (gespeichert && gespeichert.indexOf('Comic-Scanner') >= 0) {
-    // Sofort starten; die neue Fassung kommt beim nächsten Öffnen
-    zeigen(gespeichert);
-    holen.catch(function () { /* egal */ });
+// Anmeldung über Firebase; liefert dasselbe wie die Skript-Funktion "anmelden"
+function fbAnmelden(zugang) {
+  const teile = String(zugang || '').split('>');
+  const pin = teile[0];
+  const als = teile.length > 1 ? String(teile[1] || '') : '';
+  let schritt;
+  if (FB.profil && FB.pin === pin && FB.auth.currentUser) {
+    schritt = Promise.resolve();
   } else {
-    holen.then(zeigen).catch(function (e) {
-      document.getElementById('lade').innerHTML =
-        '<div style="font-size:48px">📚</div>' +
-        '<div>Der Comic-Scanner konnte nicht geladen werden (' + e.message + ').<br>Bitte Internet prüfen.</div>' +
-        '<button onclick="location.reload()">Nochmal versuchen</button>';
+    schritt = fbEmail(pin).then(function (email) {
+      return FB.auth.signInWithEmailAndPassword(email, fbPasswort(pin));
+    }).then(function (erg) {
+      return FB.db.collection('benutzer').doc(erg.user.uid).get();
+    }).then(function (doc) {
+      if (!doc.exists) throw new Error('Falsche PIN.');
+      fbAbosBeenden();
+      FB.profil = doc.data();
+      FB.pin = pin;
+      return FB.db.collection('meta').doc('app').get();
+    }).then(function (m) {
+      FB.app = m.exists ? m.data() : {};
+      if (!(FB.app.zustaende || []).length) throw new Error('Firebase noch nicht eingerichtet');
+      fbAbosStarten();
     });
   }
-})();
+  return schritt.then(function () {
+    const p = FB.profil, a = FB.app || {};
+    let b = { name: p.name, admin: !!p.admin };
+    if (als && p.admin && als !== p.name) {
+      if ((a.namen || []).indexOf(als) < 0) throw new Error('Den Benutzer „' + als + '“ gibt es nicht mehr.');
+      b = { name: als, admin: false, verwalter: p.name };
+    }
+    return {
+      ok: true, version: a.version || '', ebayAktiv: !!a.ebayAktiv, geminiAktiv: a.geminiAktiv !== false,
+      zustaende: (a.zustaende || []).map(function (z) { return [z.code, z.name, z.faktor, z.text]; }),
+      benutzer: b, namen: a.namen || [], kontingent: FB.ki
+    };
+  });
+}
+
+// Live-Verbindungen zu Firebase starten (Sammlung, Serien, KI-Zähler)
+function fbAbosStarten() {
+  let q = FB.db.collection('sammlung');
+  if (!FB.profil.admin) q = q.where('besitzer', '==', FB.profil.name);
+  FB.bereit = new Promise(function (ok) { FB.bereitOk = ok; });
+  const fertig = function () { if (FB.bereitOk) { FB.bereitOk(); FB.bereitOk = null; } };
+  FB.abos.push(q.onSnapshot(function (snap) {
+    FB.teile = {};
+    snap.forEach(function (d) { FB.teile[d.id] = d.data(); });
+    const alle = [];
+    Object.keys(FB.teile).forEach(function (k) {
+      const c = FB.teile[k].comics || {};
+      Object.keys(c).forEach(function (id) { alle.push(c[id]); });
+    });
+    FB.alle = alle;
+    fertig();
+    fbSpaeterAuffrischen();
+  }, function (err) {
+    console.log('Firebase Sammlung: ' + err.message);
+    APP.fb = false;   // ab jetzt wieder über das Skript lesen
+    fertig();
+  }));
+  FB.abos.push(FB.db.collection('serien').onSnapshot(function (snap) {
+    FB.serien = {};
+    snap.forEach(function (d) { FB.serien[d.id] = d.data(); });
+    fbSpaeterAuffrischen();
+  }, function () { /* egal */ }));
+  FB.abos.push(FB.db.collection('meta').doc('ki').onSnapshot(function (d) {
+    if (d.exists) { FB.ki = d.data(); if (APP.pin) kontingentZeigen(FB.ki); }
+  }, function () { /* egal */ }));
+  FB.abos.push(FB.db.collection('meta').doc('app').onSnapshot(function (d) {
+    if (d.exists) FB.app = d.data();
+  }, function () { /* egal */ }));
+}
+function fbAbosBeenden() {
+  FB.abos.forEach(function (f) { try { f(); } catch (e) { /* egal */ } });
+  FB.abos = [];
+}
+
+// Wer darf welches Heft sehen? (wie im Skript)
+function sichtbarFuer(c, b) {
+  const o = String(c.besitzer || '');
+  return o === b.name || (b.admin && !o);
+}
+function fbMap() {
+  const m = {};
+  FB.alle.forEach(function (c) { m[c.id] = c; });
+  return m;
+}
+
+// Nach neuen Daten aus Firebase alle offenen Ansichten auffrischen (gebündelt)
+function fbSpaeterAuffrischen() {
+  clearTimeout(FB.timer);
+  FB.timer = setTimeout(fbAnsichtenAuffrischen, 250);
+}
+function fbAnsichtenAuffrischen() {
+  if (!APP.fb || !APP.pin) return;
+  APP.daten = FB.alle.filter(function (c) { return sichtbarFuer(c, APP.benutzer); });
+  APP.datenAlt = false;
+  const map = fbMap();
+  Q.liste.forEach(function (e) { if (e.id && map[e.id] && e.eintrag) e.eintrag = map[e.id]; });
+  warteschlangeZeichnen();
+  preisFragenZeichnen(APP.daten.filter(function (d) { return d.preisFrage === 'offen'; }));
+  if (APP.tab === 'sammlung') { auswahlListenFuellen(); neuZeichnen(); }
+  if (APP.tab === 'werte') werteZeichnen();
+  if (APP.tab === 'serien') { if (APP.kat.serie) serieOeffnenStill(APP.kat.serie.id); else serienUebersichtLaden(); }
+  if (APP.detail && map[APP.detail.id]) {
+    // Nicht neu zeichnen, während gerade in einem Feld getippt wird
+    const f = document.activeElement;
+    if (!(f && $('detail').contains(f) && /INPUT|SELECT|TEXTAREA/.test(f.tagName))) {
+      APP.detail = map[APP.detail.id];
+      detailZeichnen();
+    }
+  }
+}
+
+// ----- Serien-Katalog direkt aus Firebase berechnen (wie im Skript) -----
+function cgNummer(h) {
+  if (h.nr === '' || h.nr === null || h.nr === undefined) return 'id' + h.b;
+  return (h.jahr === '' || h.jahr === null || h.jahr === undefined ? '' : h.jahr + ':') + h.nr;
+}
+function lokalBesitzIndex(b) {
+  const buch = {};
+  FB.alle.forEach(function (c) {
+    if (!sichtbarFuer(c, b)) return;
+    const m = String(c.cgUrl || '').match(/\/book\/(\d+)/);
+    if (!m) return;
+    (buch[m[1]] = buch[m[1]] || []).push({ id: c.id, zustand: c.zustand || '', menge: Number(c.menge) || 0 });
+  });
+  return buch;
+}
+function lokalSerie(id) {
+  const k = Object.keys(FB.serien);
+  for (let i = 0; i < k.length; i++) if (String(FB.serien[k[i]].id) === String(id)) return FB.serien[k[i]];
+  return null;
+}
+function lokalKatalogUebersicht() {
+  const b = APP.benutzer;
+  const eigene = {};
+  FB.alle.forEach(function (c) { if (c.cgSerieId && sichtbarFuer(c, b)) eigene[String(c.cgSerieId)] = true; });
+  const buch = lokalBesitzIndex(b);
+  const serien = Object.keys(FB.serien).map(function (k) { return FB.serien[k]; }).filter(function (s) {
+    const f = s.folger || [];
+    return f.indexOf(b.name) >= 0 || eigene[String(s.id)] || (b.admin && !f.length);
+  });
+  return {
+    serien: serien.map(function (s) {
+      const p = {};
+      let titel = null;
+      (s.hefte || []).forEach(function (h) {
+        if (h.cover !== false) {
+          const eigen = !!buch[h.b];
+          if (!titel || (eigen && !titel.eigen)) titel = { id: h.b, eigen: eigen };
+        }
+        const key = cgNummer(h);
+        const n = p[key] = p[key] || { besitz: false, z1: null };
+        if (buch[h.b]) n.besitz = true;
+        const z1 = h.z1 === '' || h.z1 === null || h.z1 === undefined ? null : Number(h.z1);
+        if (z1 !== null && (n.z1 === null || z1 < n.z1)) n.z1 = z1;
+      });
+      const keys = Object.keys(p);
+      let vorhanden = 0, wf = 0, wv = 0;
+      keys.forEach(function (k) { if (p[k].besitz) { vorhanden++; wv += p[k].z1 || 0; } else wf += p[k].z1 || 0; });
+      return {
+        id: s.id, name: s.name, verlag: s.verlag, von: s.von, bis: s.bis, gesamt: s.gesamt, geladen: s.geladen,
+        status: s.status || '', stand: s.stand, nummern: keys.length, vorhanden: vorhanden, fehlend: keys.length - vorhanden,
+        wertFehlend: Math.round(wf * 100) / 100, wertVorhanden: Math.round(wv * 100) / 100,
+        cover: titel ? 'https://www.comicguide.de/pics/small/' + titel.id + '.jpg' : ''
+      };
+    })
+  };
+}
+function lokalKatalogSerie(id) {
+  const s = lokalSerie(id);
+  if (!s) return null;
+  const buch = lokalBesitzIndex(APP.benutzer);
+  const nummerBesitz = {};
+  (s.hefte || []).forEach(function (h) { if (buch[h.b]) nummerBesitz[cgNummer(h)] = true; });
+  const hefte = (s.hefte || []).map(function (h) {
+    const eigene = buch[h.b] || [];
+    return {
+      b: h.b, band: h.band, jahr: h.jahr, nr: h.nr, zusatz: h.zusatz, z1: h.z1, cover: h.cover !== false, pos: h.pos,
+      sonder: !!h.sonder, nummer: cgNummer(h), status: eigene.length ? 'ja' : (nummerBesitz[cgNummer(h)] ? 'nummer' : ''),
+      comics: eigene
+    };
+  }).sort(function (a, b) { return a.pos - b.pos; });
+  return {
+    serie: { id: s.id, name: s.name, verlag: s.verlag, von: s.von, bis: s.bis, gesamt: s.gesamt, geladen: s.geladen, status: s.status || '' },
+    hefte: hefte
+  };
+}
+
+// Diese Abfragen beantwortet die App selbst aus Firebase (ohne Wartezeit)
+const LOKAL = {
+  alleDaten: function () {
+    return (FB.bereit || Promise.resolve()).then(function () {
+      return { daten: FB.alle.filter(function (c) { return sichtbarFuer(c, APP.benutzer); }) };
+    });
+  },
+  statusAbfragen: function (pin, ids) {
+    const map = fbMap(), erg = {};
+    (ids || []).forEach(function (id) { if (map[id]) erg[id] = map[id]; });   // fehlt = noch nicht übertragen -> weiter warten
+    return Promise.resolve(erg);
+  },
+  preisFragenOffen: function () {
+    return Promise.resolve(APP.daten.filter(function (d) { return d.preisFrage === 'offen'; }));
+  },
+  kiKontingent: function () { return Promise.resolve(FB.ki); },
+  katalogUebersicht: function () { return Promise.resolve(lokalKatalogUebersicht()); },
+  katalogSerie: function (pin, id) {
+    const r = lokalKatalogSerie(id);
+    return r ? Promise.resolve(r) : serverDirekt('katalogSerie', pin, id);
+  }
+};
+
+// Server-Funktion aufrufen (gibt ein Promise zurück)
+function server(name) {
+  const args = Array.prototype.slice.call(arguments, 1);
+  if (name === 'anmelden' && FB.an) {
+    // Zuerst über Firebase anmelden; klappt das nicht, wie bisher über das Skript
+    return fbAnmelden(args[0]).then(function (r) {
+      APP.fb = true;
+      return r;
+    }).catch(function (e) {
+      console.log('Firebase-Anmeldung: ' + ((e && (e.code || e.message)) || e));
+      APP.fb = false;
+      fbAbosBeenden();
+      return serverDirekt.apply(null, ['anmelden'].concat(args));
+    });
+  }
+  if (APP.fb && LOKAL[name]) return LOKAL[name].apply(null, args);
+  return serverDirekt.apply(null, [name].concat(args));
+}
+
+// Direkt beim Google-Skript nachfragen (Speichern, KI, Comic Guide …)
+function serverDirekt(name) {
+  const args = Array.prototype.slice.call(arguments, 1);
+  if (IN_GOOGLE) {
+    return new Promise(function (ok, fehler) {
+      google.script.run.withSuccessHandler(ok).withFailureHandler(fehler).api(name, args);
+    });
+  }
+  // Außerhalb von Google: Anfrage als einfacher Text schicken (ohne Google-Anmeldung)
+  // Reine Lese-Anfragen werden einmal wiederholt, falls Google kurz hängt
+  const nurLesen = ['alleDaten', 'anmelden', 'benutzerListe', 'katalogSerie', 'katalogSuchen', 'katalogUebersicht',
+    'kiKontingent', 'letzteBuchungen', 'preisFragenOffen', 'statusAbfragen'].indexOf(name) >= 0;
+  const versuch = function (nr) {
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ f: name, args: args }),
+      redirect: 'follow'
+    }).catch(function () {
+      const fehler = new Error('Keine Verbindung zum Server – bitte Internet prüfen und nochmal versuchen.');
+      fehler.wiederholen = true;
+      throw fehler;
+    }).then(function (r) {
+      if (!r.ok) {
+        const fehler = new Error('Server antwortet nicht (Fehler ' + r.status + '). Bitte gleich nochmal versuchen.');
+        fehler.wiederholen = true;
+        throw fehler;
+      }
+      return r.text();
+    }).then(function (text) {
+      let a;
+      try { a = JSON.parse(text); } catch (e) {
+        // Google hat statt einer Antwort eine Fehlerseite geschickt
+        const fehler = new Error('Google-Server ist gerade überlastet. Bitte gleich nochmal versuchen.');
+        fehler.wiederholen = true;
+        throw fehler;
+      }
+      if (!a || !a.ok) throw new Error((a && a.fehler) || 'Unbekannter Fehler');
+      return a.daten;
+    }).catch(function (e) {
+      if (nurLesen && nr === 0 && e.wiederholen === true) {
+        return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return versuch(1); });
+      }
+      throw e;
+    });
+  };
+  return versuch(0);
+}
+// Parameter aus dem Link lesen (z. B. ?seite=serien)
+function linkParameter(name, weiter) {
+  if (IN_GOOGLE) {
+    try { google.script.url.getLocation(function (ort) { weiter(ort && ort.parameter ? ort.parameter[name] : ''); }); } catch (e) { weiter(''); }
+    return;
+  }
+  try { weiter(new URLSearchParams(location.search).get(name) || ''); } catch (e) { weiter(''); }
+}
+function laden(an, text) {
+  $('ladeText').textContent = text || 'Bitte warten …';
+  $('laden').style.display = an ? 'flex' : 'none';
+}
+let toastTimer = null;
+function meldung(text, fehler) {
+  const t = $('toast');
+  t.textContent = text;
+  t.className = fehler ? 'fehler' : '';
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.style.display = 'none'; }, fehler ? 6000 : 3000);
+}
+function fehlerText(e) { return (e && e.message) ? e.message : String(e); }
+
+// ==========================================================
+//  Anmeldung
+// ==========================================================
+function anmelden(automatisch) {
+  const pin = automatisch ? speicherLesen('comicPin') : $('pin').value.trim();
+  if (!pin) return;
+  laden(true, 'Anmelden …');
+  server('anmelden', pin).then(function (r) {
+    laden(false);
+    APP.pin = pin;
+    APP.zustaende = r.zustaende;
+    APP.echtePin = pin;
+    benutzerAnzeigen(r);
+    speicherSchreiben('comicPin', pin);
+    $('version').textContent = 'v' + r.version;
+    $('anmeldung').classList.add('versteckt');
+    $('app').classList.remove('versteckt');
+    $('schnellmodus').checked = speicherLesen('comicSchnell') === '1';
+    $('ek-vorgabe').value = speicherLesen('comicEK') || '0';
+    $('k-zustand').innerHTML = APP.zustaende.map(function (z) {
+      return '<option value="' + z[0] + '"' + (z[0] === 'Z2' ? ' selected' : '') + '>' + z[0] + ' – ' + esc(z[1]) + '</option>';
+    }).join('');
+    if (window.innerWidth < 760) $('filterBox').removeAttribute('open');
+    if (!r.geminiAktiv) meldung('Achtung: Kein Gemini-Schlüssel eingetragen – die Erkennung funktioniert noch nicht.', true);
+    buchungenLaden();
+    kontingentZeigen(r.kontingent);
+    preisFragenLaden();
+    // Start-Reiter aus dem Link (?seite=sammlung / serien / werte; alter Link ?seite=verwaltung)
+    linkParameter('seite', function (s) {
+      if (s === 'verwaltung' || s === 'sammlung') zeigeTab('sammlung');
+      else if (s === 'serien') zeigeTab('serien');
+      else if (s === 'werte') zeigeTab('werte');
+    });
+  }).catch(function (e) {
+    laden(false);
+    speicherSchreiben('comicPin', '');
+    if (!automatisch) meldung(fehlerText(e), true);
+  });
+}
+// Wer ist angemeldet, wessen Sammlung wird gezeigt? (Kopfzeile, Verwalter-Knöpfe)
+function benutzerAnzeigen(r) {
+  APP.benutzer = r.benutzer || { name: '', admin: false };
+  APP.namen = r.namen || [];
+  APP.verwalter = !!(APP.benutzer.admin || APP.benutzer.verwalter);
+  APP.eigenerName = APP.benutzer.verwalter || APP.benutzer.name;
+  const fremd = !!APP.benutzer.verwalter;
+  $('benutzerChip').textContent = '👤 ' + APP.benutzer.name;
+  $('benutzerChip').classList.toggle('versteckt', APP.verwalter);
+  $('alsBenutzer').classList.toggle('versteckt', !APP.verwalter);
+  $('alsBenutzer').innerHTML = APP.namen.map(function (n) {
+    return '<option value="' + esc(n) + '">' + (n === APP.eigenerName ? '👤 ' + esc(n) + ' (ich)' : '👁 ' + esc(n)) + '</option>';
+  }).join('');
+  $('alsBenutzer').value = APP.benutzer.name;
+  document.querySelectorAll('header').forEach(function (h) { h.classList.toggle('fremd', fremd); });
+  $('fremdHinweis').classList.toggle('versteckt', !fremd);
+  $('fremdHinweis').innerHTML = fremd ? '👁 Du siehst gerade die Sammlung von <b>' + esc(APP.benutzer.name) + '</b>. Alles, was du jetzt scannst oder änderst, landet bei ' + esc(APP.benutzer.name) + '. ' +
+    '<a href="#" onclick="event.preventDefault();$(\'alsBenutzer\').value=APP.eigenerName;alsWechseln()">Zurück zu meiner Sammlung</a>' : '';
+  $('btnBenutzer').classList.toggle('versteckt', !APP.verwalter);
+  $('f-besitzerBox').classList.toggle('versteckt', !APP.verwalter);
+  $('zuordnenBox').classList.toggle('versteckt', !APP.verwalter);
+  $('zuordnenZiel').innerHTML = APP.namen.filter(function (n) { return n !== APP.benutzer.name; })
+    .map(function (n) { return '<option value="' + esc(n) + '">verschieben zu ' + esc(n) + '</option>'; }).join('');
+}
+// Verwalter: in die Sammlung eines anderen Benutzers wechseln (oder zurück)
+function alsWechseln() {
+  const n = $('alsBenutzer').value;
+  const offen = Q.liste.some(function (e) { return e.phase === 'hochladen' || e.phase === 'hochladen-wartet'; });
+  if (offen) { meldung('Bitte warten, bis alle Fotos gespeichert sind.', true); $('alsBenutzer').value = APP.benutzer.name; return; }
+  const zugang = APP.echtePin + (n && n !== APP.eigenerName ? '>' + n : '');
+  laden(true, 'Wechsle zu ' + n + ' …');
+  server('anmelden', zugang).then(function (r) {
+    laden(false);
+    APP.pin = zugang;
+    benutzerAnzeigen(r);
+    APP.daten = []; APP.datenAlt = true; APP.aktuell = [];
+    APP.kat.serie = null; APP.kat.hefte = []; APP.kat.auswahl = {}; APP.kat.serien = [];
+    clearTimeout(APP.kat.timer);
+    $('serie-detail').classList.add('versteckt');
+    $('serien-uebersicht').classList.remove('versteckt');
+    $('auswahlLeiste').classList.add('versteckt');
+    Q.liste = []; warteschlangeZeichnen();
+    detailSchliessen();
+    FILTER_FELDER.forEach(function (id) { $(id).value = ''; });
+    FILTER_HAKEN.forEach(function (id) { $(id).checked = false; });
+    APP.filterZustand = {};
+    zeigeTab(APP.tab);
+    preisFragenLaden();
+    meldung(r.benutzer.verwalter ? '👁 Du siehst jetzt die Sammlung von ' + r.benutzer.name : '👤 Zurück in deiner eigenen Sammlung');
+  }).catch(function (e) { laden(false); $('alsBenutzer').value = APP.benutzer.name; meldung(fehlerText(e), true); });
+}
+function abmelden() {
+  speicherSchreiben('comicPin', '');
+  fbAbosBeenden();
+  const weiter = function () { location.reload(); };
+  if (FB.an && FB.auth) FB.auth.signOut().then(weiter, weiter); else weiter();
+}
+$('pin').addEventListener('keydown', function (e) { if (e.key === 'Enter') anmelden(); });
+function schnellmodusGeaendert() { speicherSchreiben('comicSchnell', $('schnellmodus').checked ? '1' : ''); }
+function ekVorgabeGeaendert() { speicherSchreiben('comicEK', $('ek-vorgabe').value.trim()); }
+function ekVorgabe() { return ($('ek-vorgabe').value || '').trim() || '0'; }
+
+// ==========================================================
+//  Reiter
+// ==========================================================
+function zeigeTab(name) {
+  APP.tab = name;
+  ['erfassen', 'sammlung', 'serien', 'werte'].forEach(function (t) {
+    $('seite-' + t).classList.toggle('versteckt', t !== name);
+    $('tab-' + t).classList.toggle('aktiv', t === name);
+  });
+  $('haupt').className = name === 'erfassen' ? 'eng' : 'breit';
+  $('auswahlLeiste').classList.toggle('versteckt', !(name === 'serien' && APP.kat.serie && katAuswahlAnzahl()));
+  if (name === 'erfassen') buchungenLaden();
+  if (name === 'sammlung') datenSicherstellen().then(function () { auswahlListenFuellen(); neuZeichnen(); });
+  if (name === 'werte') datenSicherstellen().then(werteZeichnen);
+  if (name === 'serien') { if (APP.kat.serie) katZeichnen(false); else serienUebersichtLaden(); }
+  window.scrollTo(0, 0);
+}
+
+// Alle Comics laden (für Sammlung und Werte)
+function datenLaden() {
+  laden(true, APP.fb ? 'Sammlung wird geladen … (beim allerersten Öffnen kann das etwas dauern, danach geht es sofort)' : 'Sammlung wird geladen …');
+  return server('alleDaten', APP.pin).then(function (r) {
+    laden(false);
+    APP.daten = r.daten;
+    APP.datenAlt = false;
+    auswahlListenFuellen();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function datenSicherstellen() {
+  return APP.datenAlt ? datenLaden() : Promise.resolve();
+}
+
+// ==========================================================
+//  ERFASSEN: Foto vorbereiten
+// ==========================================================
+function bildVerkleinern(datei) {
+  return new Promise(function (ok, fehler) {
+    const url = URL.createObjectURL(datei);
+    const img = new Image();
+    img.onload = function () {
+      const max = 1400;
+      const f = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * f), h = Math.round(img.naturalHeight * f);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = function () { fehler(new Error('Das Foto konnte nicht gelesen werden.')); };
+    img.src = url;
+  });
+}
+
+// Foto auf das Heft zuschneiden (Rechteck von der KI, 0–1000) und gerade drehen (0/90/180/270 Grad)
+function bildAnpassen(dataUrl, box, drehung) {
+  return new Promise(function (ok) {
+    drehung = [90, 180, 270].indexOf(Number(drehung)) >= 0 ? Number(drehung) : 0;
+    const img = new Image();
+    img.onload = function () {
+      const W = img.naturalWidth, H = img.naturalHeight;
+      let sx = 0, sy = 0, sw = W, sh = H, zuschnitt = false;
+      if (box && box.length === 4) {
+        const rand = 0.015;
+        const y1 = Math.max(0, box[0] / 1000 - rand), x1 = Math.max(0, box[1] / 1000 - rand);
+        const y2 = Math.min(1, box[2] / 1000 + rand), x2 = Math.min(1, box[3] / 1000 + rand);
+        const flaeche = (y2 - y1) * (x2 - x1);
+        if (flaeche <= 0.9 && flaeche >= 0.08) {
+          sx = Math.round(x1 * W); sy = Math.round(y1 * H);
+          sw = Math.round((x2 - x1) * W); sh = Math.round((y2 - y1) * H);
+          zuschnitt = true;
+        }
+      }
+      if (!zuschnitt && !drehung) { ok(null); return; }
+      const quer = drehung === 90 || drehung === 270;
+      const c = document.createElement('canvas');
+      c.width = quer ? sh : sw;
+      c.height = quer ? sw : sh;
+      const g = c.getContext('2d');
+      g.translate(c.width / 2, c.height / 2);
+      g.rotate(drehung * Math.PI / 180);
+      g.drawImage(img, sx, sy, sw, sh, -sw / 2, -sh / 2, sw, sh);
+      ok(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = function () { ok(null); };
+    img.src = dataUrl;
+  });
+}
+
+// ==========================================================
+//  ERFASSEN: Foto -> (Zustand antippen) -> sofort speichern
+// ==========================================================
+function fotosGewaehlt(input) {
+  const dateien = Array.prototype.slice.call(input.files || []);
+  input.value = '';
+  if (!dateien.length) return;
+  const schnell = $('schnellmodus').checked || dateien.length > 1;
+  dateien.reduce(function (kette, datei) {
+    return kette.then(function () { return bildVerkleinern(datei); }).then(function (dataUrl) {
+      if (schnell) inWarteschlange(dataUrl, '', 1, ekVorgabe());
+      else APP.wartend.push(dataUrl);
+    }).catch(function (e) { meldung(fehlerText(e), true); });
+  }, Promise.resolve()).then(function () {
+    if (schnell) meldung(dateien.length > 1 ? '📥 ' + dateien.length + ' Fotos übernommen' : '📥 Gespeichert – KI arbeitet im Hintergrund');
+    else zustandSchrittZeigen();
+  });
+}
+function zustandSchrittZeigen() {
+  if (!APP.wartend.length) return;
+  APP.menge = 1;
+  $('menge').textContent = '1';
+  $('f-ek').value = ekVorgabe();
+  $('fotoVorschau').src = APP.wartend[0];
+  $('zustandKnoepfe').innerHTML = APP.zustaende.map(function (z) {
+    return '<button class="zbtn" onclick="zustandGetippt(\'' + z[0] + '\')"><b>' + z[0] + '</b><span>' + esc(z[1]) + '</span></button>';
+  }).join('') + '<button class="zbtn ki-btn" onclick="zustandGetippt(\'\')"><b>🤖 KI entscheidet</b><span>Zustand wird vom Foto geschätzt</span></button>';
+  $('schritt-foto').classList.add('versteckt');
+  $('schritt-zustand').classList.remove('versteckt');
+  window.scrollTo(0, 0);
+}
+function zustandGetippt(code) {
+  const dataUrl = APP.wartend.shift();
+  inWarteschlange(dataUrl, code, APP.menge, $('f-ek').value);
+  meldung('📥 Gespeichert' + (code ? ' (' + code + ')' : '') + ' – KI arbeitet im Hintergrund');
+  if (APP.wartend.length) { zustandSchrittZeigen(); return; }
+  $('schritt-zustand').classList.add('versteckt');
+  $('schritt-foto').classList.remove('versteckt');
+  window.scrollTo(0, 0);
+}
+function zustandAbbrechen() {
+  APP.wartend.shift();
+  if (APP.wartend.length) { zustandSchrittZeigen(); return; }
+  $('schritt-zustand').classList.add('versteckt');
+  $('schritt-foto').classList.remove('versteckt');
+}
+function mengeStellen(d) {
+  APP.menge = Math.max(1, APP.menge + d);
+  $('menge').textContent = APP.menge;
+}
+
+// ----- Warteschlange -----
+function inWarteschlange(dataUrl, zustand, menge, ek) {
+  Q.zaehler++;
+  Q.liste.unshift({
+    nr: Q.zaehler, dataUrl: dataUrl, zustand: zustand, menge: menge, ek: ek,
+    phase: 'hochladen-wartet', id: null, text: '', eintrag: null, versuche: 0
+  });
+  warteschlangeZeichnen();
+  pumpe();
+}
+function pumpe() {
+  Q.liste.slice().reverse().forEach(function (e) {
+    if (e.phase === 'hochladen-wartet' && Q.uploads < MAX_UPLOADS) hochladen(e);
+  });
+  Q.liste.slice().reverse().forEach(function (e) {
+    if (e.phase === 'erkennen-wartet' && Q.erkennungen < MAX_ERKENNUNGEN) erkennenStarten(e);
+  });
+  warteschlangeZeichnen();
+}
+function hochladen(e) {
+  Q.uploads++;
+  e.phase = 'hochladen';
+  server('schnellSpeichern', APP.pin, { base64: e.dataUrl.split(',')[1], zustand: e.zustand, menge: e.menge, ek: e.ek })
+    .then(function (r) {
+      Q.uploads--;
+      e.id = r.id;
+      e.phase = 'erkennen-wartet';
+      APP.datenAlt = true;
+      pumpe();
+    }).catch(function (err) {
+      Q.uploads--;
+      e.versuche++;
+      if (e.versuche < 3) { e.phase = 'hochladen-wartet'; setTimeout(pumpe, 3000); }
+      else { e.phase = 'fehler-upload'; e.text = fehlerText(err); }
+      pumpe();
+    });
+}
+function erkennenStarten(e) {
+  Q.erkennungen++;
+  e.phase = 'erkennen';
+  warteschlangeZeichnen();
+  server('erkennen', APP.pin, e.id, false).then(function (r) {
+    Q.erkennungen--;
+    ergebnisUebernehmen(e, r);
+    pumpe();
+  }).catch(function (err) {
+    Q.erkennungen--;
+    e.phase = 'server';
+    e.text = fehlerText(err);
+    pumpe();
+  });
+}
+function ergebnisUebernehmen(e, r) {
+  if (!r) return;
+  APP.datenAlt = true;
+  if (r.laeuft) { e.phase = 'server'; return; }
+  if (r.fehlt) { e.phase = 'weg'; e.text = 'Eintrag wurde gelöscht'; return; }
+  if (r.fehler) { e.phase = 'server'; e.text = r.fehler; if (r.tageslimit) kontingentAktualisieren(); return; }
+  if (r.zusammengefuehrt) {
+    e.phase = 'fertig';
+    e.eintrag = r.eintrag;
+    e.text = '➕ Schon vorhanden – jetzt ' + r.menge + ' Stück';
+    nachErkennung(r.eintrag);
+    return;
+  }
+  e.phase = 'fertig';
+  e.eintrag = r.eintrag;
+  e.text = '';
+  nachErkennung(r.eintrag);
+  if ((r.box || r.drehung) && !e.zugeschnitten) {
+    e.zugeschnitten = true;
+    bildAnpassen(e.dataUrl, r.box, r.drehung).then(function (neu) {
+      if (!neu) return;
+      e.dataUrl = neu;
+      warteschlangeZeichnen();
+      server('fotoErsetzen', APP.pin, e.id, neu.split(',')[1]).then(function (eintrag) {
+        if (eintrag) e.eintrag = eintrag;
+      }).catch(function () { /* Original-Foto bleibt erhalten */ });
+    });
+  }
+}
+// Alle 15 Sekunden nachsehen, was der Server im Hintergrund erledigt hat
+setInterval(function () {
+  const offen = Q.liste.filter(function (e) { return e.phase === 'server' && e.id; });
+  if (!offen.length || !APP.pin) return;
+  server('statusAbfragen', APP.pin, offen.map(function (e) { return e.id; })).then(function (erg) {
+    offen.forEach(function (e) {
+      const x = erg[e.id];
+      if (x === null) { e.phase = 'weg'; e.text = 'zusammengeführt oder gelöscht'; return; }
+      if (!x) return;
+      e.eintrag = x;
+      if (x.status && x.status.indexOf('⏳') !== 0 && x.status.indexOf('❌') !== 0) { e.phase = 'fertig'; e.text = ''; APP.datenAlt = true; nachErkennung(x); }
+      else if (x.status) e.text = x.status;
+    });
+    warteschlangeZeichnen();
+  }).catch(function () { /* nächster Versuch in 15 s */ });
+}, 15000);
+window.addEventListener('beforeunload', function (ev) {
+  const offen = Q.liste.some(function (e) { return e.phase === 'hochladen' || e.phase === 'hochladen-wartet'; });
+  if (offen) { ev.preventDefault(); ev.returnValue = ''; }
+});
+function statusHtml(e) {
+  const x = e.eintrag;
+  if (e.phase === 'hochladen-wartet' || e.phase === 'hochladen') return '<span class="st st-arbeit"><span class="punkt"></span>wird gespeichert …</span>';
+  if (e.phase === 'erkennen-wartet' || e.phase === 'erkennen') return '<span class="st st-arbeit"><span class="punkt"></span>KI erkennt, Comic Guide wird gefragt …</span>';
+  if (e.phase === 'server') return '<span class="st st-warn"><span class="punkt"></span>wird im Hintergrund erkannt' + (e.text ? ' (' + esc(e.text.slice(0, 60)) + ')' : '') + '</span>';
+  if (e.phase === 'fehler-upload') return '<span class="st st-fehler">❌ Speichern fehlgeschlagen: ' + esc(e.text) + '</span>';
+  if (e.phase === 'weg') return '<span class="st st-warn">' + esc(e.text) + '</span>';
+  if (e.text) return '<span class="st st-ok">' + esc(e.text) + '</span>';
+  if (x && x.status && x.status.indexOf('⚠') === 0) return '<span class="st st-warn">' + esc(x.status) + ' – antippen zum Prüfen</span>';
+  return '<span class="st st-ok">' + esc(x && x.status ? x.status : '✅ erkannt') + '</span>';
+}
+function warteschlangeZeichnen() {
+  const offen = Q.liste.filter(function (e) { return e.phase !== 'fertig' && e.phase !== 'weg' && e.phase !== 'fehler-upload'; }).length;
+  $('offenZaehler').textContent = offen + ' in Arbeit';
+  $('offenZaehler').classList.toggle('versteckt', !offen);
+  if (!Q.liste.length) { $('warteschlange').textContent = 'Noch nichts gescannt.'; return; }
+  $('warteschlange').innerHTML = Q.liste.slice(0, 40).map(function (e, i) {
+    const x = e.eintrag;
+    const titel = x && x.serie ? esc(x.serie) + ' ' + esc(x.nr) : 'Foto ' + e.nr;
+    const unter = x ? [x.titel, x.verlag, x.jahr].filter(String).map(esc).join(' · ') : '';
+    const zustand = x && x.zustand ? x.zustand : (e.zustand || 'KI');
+    const menge = x ? x.menge : e.menge;
+    const werte = x ? (x.wertStk !== '' ? '📖 ' + euro(x.wertStk) : '') + (x.kiWertStk !== '' ? ' <span class="kifarbe">🤖 ' + euro(x.kiWertStk) + '</span>' : '') : '';
+    return '<div class="eintrag" onclick="scanOeffnen(' + i + ')">' +
+      '<img src="' + e.dataUrl + '" alt="">' +
+      '<div class="info"><div class="titel">' + titel + '</div>' +
+      (unter ? '<div class="klein">' + unter + '</div>' : '') +
+      '<div>' + statusHtml(e) + '</div></div>' +
+      '<div class="rechts"><b>' + esc(zustand) + '</b><br>' + menge + ' Stk.' + (werte ? '<br>' + werte : '') +
+      (e.phase === 'fehler-upload' ? '<br><button class="chip" onclick="event.stopPropagation();nochmalHochladen(' + i + ')">↻</button>' : '') +
+      '</div></div>';
+  }).join('');
+}
+function nochmalHochladen(i) {
+  const e = Q.liste[i];
+  e.versuche = 0; e.phase = 'hochladen-wartet'; e.text = '';
+  pumpe();
+}
+function scanOeffnen(i) {
+  const e = Q.liste[i];
+  if (!e.eintrag) { meldung('Noch in Arbeit – gleich antippbar.'); return; }
+  detailOeffnenMit(e.eintrag);
+}
+
+// ==========================================================
+//  KI-ZÄHLER: wie viele Erkennungen heute noch frei sind
+// ==========================================================
+function kontingentZeigen(k) {
+  APP.kontingent = k || null;
+  const box = $('kiAnzeige');
+  if (!k || !k.modelle || !k.modelle.length) { box.classList.add('versteckt'); return; }
+  const beste = k.modelle[0];
+  const aktiv = k.modelle.filter(function (m) { return !m.voll; })[0];
+  let text, prozent;
+  if (!beste.voll) {
+    const rest = beste.limit ? Math.max(0, beste.limit - beste.genutzt) : null;
+    text = '🤖 Beste KI heute: <b>' + beste.genutzt + ' von ' + (beste.limit || '?') + '</b> Erkennungen verbraucht' +
+      (rest !== null ? ' – noch <b>' + rest + '</b> frei' : '') + '. Danach übernimmt automatisch eine Ersatz-KI.';
+    prozent = beste.limit ? beste.genutzt / beste.limit * 100 : 0;
+  } else if (aktiv) {
+    text = '🤖 Beste KI für heute aufgebraucht – jetzt erkennt die <b>' + esc(aktiv.name) + '</b> (' + aktiv.genutzt + ' von ' + (aktiv.limit || '?') + '). Sie ist etwas ungenauer, bitte Ergebnisse kurz prüfen.';
+    prozent = aktiv.limit ? aktiv.genutzt / aktiv.limit * 100 : 0;
+  } else {
+    text = '⛔ KI für heute komplett aufgebraucht. Fotografieren geht trotzdem – die Fotos werden gespeichert und ab ' + esc(k.reset) + ' Uhr automatisch erkannt.';
+    prozent = 100;
+  }
+  prozent = Math.max(0, Math.min(100, prozent));
+  const klasse = prozent >= 100 ? 'voll' : (prozent >= 70 ? 'mittel' : '');
+  const details = '<div class="ki-details' + (APP.kiDetails ? '' : ' versteckt') + '">' + k.modelle.map(function (m) {
+    return '<div>' + esc(m.name) + '</div><div><b>' + m.genutzt + ' / ' + (m.limit || '?') + '</b>' + (m.voll ? ' ⛔' : '') + '</div>';
+  }).join('') + '<div class="klein" style="grid-column:1/-1">Kostenlos. Neu ab ' + esc(k.reset) + ' Uhr. Gezählt wird ab dieser App-Version.</div></div>';
+  box.innerHTML = text + ' <span class="klein">· neu ab ' + esc(k.reset) + ' Uhr</span>' +
+    '<div class="ki-spur"><div class="ki-balken ' + klasse + '" style="width:' + prozent.toFixed(0) + '%"></div></div>' + details;
+  box.classList.remove('versteckt');
+}
+function kiDetailsUmschalten() {
+  APP.kiDetails = !APP.kiDetails;
+  kontingentZeigen(APP.kontingent);
+}
+// Nach einer Erkennung den Zähler neu holen (höchstens alle 5 Sekunden)
+function kontingentAktualisieren() {
+  if (APP.kontTimer || !APP.pin) return;
+  APP.kontTimer = setTimeout(function () {
+    APP.kontTimer = null;
+    server('kiKontingent', APP.pin).then(kontingentZeigen).catch(function () { /* egal */ });
+  }, 5000);
+}
+// Wird aufgerufen, sobald ein Foto fertig erkannt ist
+function nachErkennung(x) {
+  kontingentAktualisieren();
+  if (x && x.preisFrage === 'offen') preisFragenLaden();
+}
+
+// ==========================================================
+//  PREISSCHILD: "Hast du das Heft zu diesem Preis gekauft?"
+// ==========================================================
+function preisFragenLaden() {
+  if (!APP.pin) return;
+  server('preisFragenOffen', APP.pin).then(preisFragenZeichnen).catch(function () { /* egal */ });
+}
+function preisFragenZeichnen(liste) {
+  APP.preisFragen = liste || [];
+  const box = $('preisFragen');
+  if (!APP.preisFragen.length) { box.classList.add('versteckt'); box.innerHTML = ''; return; }
+  box.innerHTML = '<h2>💶 Preisschild erkannt' + (APP.preisFragen.length > 1 ? ' <span class="zaehler">' + APP.preisFragen.length + '</span>' : '') + '</h2>' +
+    '<p class="klein">Auf dem Foto klebt ein Preis. Hast du das Heft selbst zu diesem Preis gekauft? Dann wird er als Einkaufspreis (je Stück) eingetragen.</p>' +
+    APP.preisFragen.slice(0, 10).map(function (d) {
+      return '<div class="preis-frage">' +
+        (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" onclick="preisDetail(\'' + esc(d.id) + '\')">' : '') +
+        '<div class="info"><div class="titel">' + (d.serie ? esc(d.serie) + ' ' + esc(d.nr) : '(noch nicht erkannt)') + '</div>' +
+        '<div class="preis">' + euro(d.preisschild) + '</div></div>' +
+        '<div class="knoepfe">' +
+          '<button class="btn btn-gruen" onclick="preisschildAntwort(\'' + esc(d.id) + '\', true)">✅ Ja, gekauft</button>' +
+          '<button class="btn btn-hell" onclick="preisschildAntwort(\'' + esc(d.id) + '\', false)">✖ Nein</button>' +
+        '</div></div>';
+    }).join('') +
+    (APP.preisFragen.length > 10 ? '<p class="klein">… und ' + (APP.preisFragen.length - 10) + ' weitere.</p>' : '');
+  box.classList.remove('versteckt');
+}
+function preisDetail(id) {
+  const d = (APP.preisFragen || []).filter(function (x) { return x.id === id; })[0];
+  if (d) detailOeffnenMit(d);
+}
+function preisschildAntwort(id, ja) {
+  laden(true, 'Speichern …');
+  server('preisschildAntwort', APP.pin, id, ja).then(function (neu) {
+    laden(false);
+    APP.preisFragen = (APP.preisFragen || []).filter(function (d) { return d.id !== id; });
+    preisFragenZeichnen(APP.preisFragen);
+    eintragErsetzen(neu);
+    meldung(ja ? '💶 Einkaufspreis ' + euro(neu.ek) + ' eingetragen' : 'OK – Preisschild wird nicht als Einkaufspreis genommen');
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+
+// ----- Letzte Buchungen mit Rückgängig -----
+function buchungenLaden() {
+  if (!APP.pin) return;
+  server('letzteBuchungen', APP.pin).then(function (liste) {
+    if (!liste.length) { $('buchungen').textContent = 'Noch keine Buchungen.'; return; }
+    $('buchungen').innerHTML = liste.map(function (b) {
+      const aenderung = b.aenderung ? ' (' + (Number(b.aenderung) > 0 ? '+' : '') + esc(b.aenderung) + ')' : '';
+      return '<div class="eintrag" style="cursor:default"><div class="info"><div class="titel">' + esc(b.serie) + ' ' + esc(b.nr) + '</div>' +
+        '<div class="klein">' + esc(b.zeit) + ' · ' + esc(b.aktion) + aenderung + (b.zustand ? ' · ' + esc(b.zustand) : '') +
+        (b.info ? ' · ' + esc(b.info) : '') + (b.status ? ' · <i>' + esc(b.status) + '</i>' : '') + '</div></div>' +
+        (b.rueckgaengigMoeglich ? '<button class="chip" onclick="rueckgaengig(' + b.zeile + ')">↶</button>' : '') + '</div>';
+    }).join('');
+  }).catch(function () { /* still ignorieren */ });
+}
+function rueckgaengig(zeile) {
+  if (!confirm('Diese Buchung rückgängig machen?')) return;
+  laden(true, 'Rückgängig …');
+  server('rueckgaengig', APP.pin, zeile).then(function (r) {
+    laden(false); meldung(r.meldung); APP.datenAlt = true; buchungenLaden();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+
+// ==========================================================
+//  SAMMLUNG: Auswahllisten, Filter, Sortierung
+// ==========================================================
+function eindeutig(feld) {
+  const m = {};
+  APP.daten.forEach(function (d) { const w = String(d[feld] || '').trim(); if (w) m[w] = (m[w] || 0) + 1; });
+  return Object.keys(m).sort(function (a, b) { return a.localeCompare(b, 'de'); }).map(function (k) { return [k, m[k]]; });
+}
+function selectFuellen(id, feld, leerText) {
+  const sel = $(id), alt = sel.value;
+  sel.innerHTML = '<option value="">' + leerText + '</option>' + eindeutig(feld).map(function (e) {
+    return '<option value="' + esc(e[0]) + '">' + esc(e[0]) + ' (' + e[1] + ')</option>';
+  }).join('');
+  sel.value = alt;
+}
+function auswahlListenFuellen() {
+  selectFuellen('f-serie', 'serie', 'Alle Serien');
+  selectFuellen('f-verlag', 'verlag', 'Alle Verlage');
+  selectFuellen('f-format', 'format', 'Alle Formate');
+  if (APP.verwalter) {
+    const altB = $('f-besitzer').value;
+    const ohne = APP.daten.filter(function (d) { return !d.besitzer; }).length;
+    const eigene = APP.daten.length - ohne;
+    $('f-besitzer').innerHTML = '<option value="">Alle</option><option value="-">❓ noch nicht zugeordnet (' + ohne + ')</option>' +
+      '<option value="' + esc(APP.benutzer.name) + '">' + esc(APP.benutzer.name) + ' (' + eigene + ')</option>';
+    $('f-besitzer').value = altB;
+  }
+  const anzahl = {};
+  APP.daten.forEach(function (d) { anzahl[d.zustand] = (anzahl[d.zustand] || 0) + (d.menge || 0); });
+  $('f-zustaende').innerHTML = APP.zustaende.map(function (z) {
+    return '<button class="chip' + (APP.filterZustand[z[0]] ? ' an' : '') + '" onclick="zustandFilter(\'' + z[0] + '\')" title="' + esc(z[3]) + '">' +
+      z[0] + ' ' + esc(z[1]) + '<span class="anz">' + (anzahl[z[0]] || 0) + '</span></button>';
+  }).join('');
+}
+function zustandFilter(code) {
+  APP.filterZustand[code] = !APP.filterZustand[code];
+  auswahlListenFuellen();
+  neuZeichnen();
+}
+const FILTER_FELDER = ['f-suche', 'f-serie', 'f-verlag', 'f-format', 'f-besitzer', 'f-nrVon', 'f-nrBis', 'f-jahrVon', 'f-jahrBis', 'f-wertAb', 'f-quelle'];
+const FILTER_HAKEN = ['f-ohneZ1', 'f-doppelt', 'f-unsicher', 'f-offen'];
+function filterZuruecksetzen() {
+  FILTER_FELDER.forEach(function (id) { $(id).value = ''; });
+  FILTER_HAKEN.forEach(function (id) { $(id).checked = false; });
+  APP.filterZustand = {};
+  auswahlListenFuellen();
+  neuZeichnen();
+}
+function filterAktiv() {
+  return FILTER_FELDER.some(function (id) { return $(id).value !== ''; }) ||
+    FILTER_HAKEN.some(function (id) { return $(id).checked; }) ||
+    Object.keys(APP.filterZustand).some(function (k) { return APP.filterZustand[k]; });
+}
+function gefiltert() {
+  const suche = $('f-suche').value.toLowerCase().split(/\s+/).filter(String);
+  const serie = $('f-serie').value, verlag = $('f-verlag').value, format = $('f-format').value, besitzer = $('f-besitzer').value;
+  const nrVon = parseFloat($('f-nrVon').value), nrBis = parseFloat($('f-nrBis').value);
+  const jVon = parseFloat($('f-jahrVon').value), jBis = parseFloat($('f-jahrBis').value);
+  const wertAb = parseFloat($('f-wertAb').value);
+  const quelle = $('f-quelle').value;
+  const zustandAktiv = Object.keys(APP.filterZustand).filter(function (k) { return APP.filterZustand[k]; });
+  return APP.daten.filter(function (d) {
+    if (serie && d.serie !== serie && serienBasis(d.serie) !== serie) return false;
+    if (verlag && d.verlag !== verlag) return false;
+    if (format && d.format !== format) return false;
+    if (besitzer === '-' && d.besitzer) return false;
+    if (besitzer && besitzer !== '-' && d.besitzer !== besitzer) return false;
+    if (zustandAktiv.length && zustandAktiv.indexOf(d.zustand) < 0) return false;
+    const nr = ganzeZahl(d.nr);
+    if (!isNaN(nrVon) && (nr === null || nr < nrVon)) return false;
+    if (!isNaN(nrBis) && (nr === null || nr > nrBis)) return false;
+    const j = ganzeZahl(d.jahr);
+    if (!isNaN(jVon) && (j === null || j < jVon)) return false;
+    if (!isNaN(jBis) && (j === null || j > jBis)) return false;
+    if (!isNaN(wertAb) && !(zahl(d.wertStk) !== null && d.wertStk >= wertAb)) return false;
+    if (quelle === '-' && zahl(d.wertStk) !== null) return false;
+    if (quelle && quelle !== '-' && d.wertQuelle !== quelle) return false;
+    if ($('f-ohneZ1').checked && zahl(d.z1) !== null) return false;
+    if ($('f-doppelt').checked && !(d.menge >= 2)) return false;
+    if ($('f-unsicher').checked && !(zahl(d.kiSicherheit) !== null && d.kiSicherheit < 60)) return false;
+    if ($('f-offen').checked && !zuPruefen(d)) return false;
+    if (suche.length) {
+      const t = [d.serie, d.nr, d.titel, d.verlag, d.jahr, d.zeichner, d.texter, d.notiz, d.beschreibung, d.originaltitel, d.ean, d.auflage].join(' ').toLowerCase();
+      for (let i = 0; i < suche.length; i++) if (t.indexOf(suche[i]) < 0) return false;
+    }
+    return true;
+  });
+}
+function zuPruefen(d) {
+  const st = String(d.status || '');
+  return st !== '' && st.indexOf('📖 aus') !== 0 && (st.indexOf('✅') !== 0 || st.indexOf('📌') >= 0);
+}
+function statusSymbol(d) {
+  const st = String(d.status || '');
+  if (!st) return '';
+  if (st.indexOf('⏳') === 0) return ' <span title="' + esc(st) + '">⏳</span>';
+  if (st.indexOf('❌') === 0) return ' <span title="' + esc(st) + '">❌</span>';
+  if (st.indexOf('⚠') === 0) return ' <span title="' + esc(st) + '">⚠️</span>';
+  if (st.indexOf('📌') >= 0) return ' <span title="' + esc(st) + '">📌</span>';
+  return '';
+}
+function ohneBesitzer(d) {
+  return (APP.verwalter && !d.besitzer) ? '<span class="ohne-besitzer" title="Noch keinem Benutzer zugeordnet">👤?</span>' : '';
+}
+function vergleich(a, b, spalte) {
+  if (spalte === 'serie') {
+    const s = String(a.serie).localeCompare(String(b.serie), 'de');
+    if (s) return s;
+    const j = (ganzeZahl(a.jahr) || 0) - (ganzeZahl(b.jahr) || 0);
+    if (j) return j;
+    return String(a.nr).localeCompare(String(b.nr), 'de', { numeric: true });
+  }
+  if (spalte === 'jahr') return (ganzeZahl(a.jahr) || 0) - (ganzeZahl(b.jahr) || 0);
+  if (spalte === 'nr') return String(a.nr).localeCompare(String(b.nr), 'de', { numeric: true });
+  if (spalte === 'angelegt') return datumWert(a.angelegt) - datumWert(b.angelegt);
+  const x = a[spalte], y = b[spalte];
+  if (typeof x === 'number' || typeof y === 'number') {
+    return (zahl(x) === null ? -Infinity : x) - (zahl(y) === null ? -Infinity : y);
+  }
+  return String(x || '').localeCompare(String(y || ''), 'de', { numeric: true });
+}
+function datumWert(t) {
+  const m = String(t || '').match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
+  return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime() : 0;
+}
+function sortWahl() {
+  const w = $('f-sort').value.split('-');
+  APP.sortSpalte = w[0];
+  APP.sortAuf = w[0] === 'serie' ? true : w[1] === 'auf';
+  neuZeichnen();
+}
+function sortKlick(spalte) {
+  if (APP.sortSpalte === spalte) APP.sortAuf = !APP.sortAuf;
+  else { APP.sortSpalte = spalte; APP.sortAuf = true; }
+  neuZeichnen();
+}
+function summe(liste, feld, mitMenge) {
+  return liste.reduce(function (s, d) {
+    const w = zahl(d[feld]);
+    return w === null ? s : s + (mitMenge ? w * (d.menge || 0) : w);
+  }, 0);
+}
+
+// ----- Sammlung zeichnen -----
+function neuZeichnen() {
+  if (APP.tab !== 'sammlung') return;
+  const liste = gefiltert();
+  liste.sort(function (a, b) { const v = vergleich(a, b, APP.sortSpalte); return APP.sortAuf ? v : -v; });
+  APP.aktuell = liste;
+  const hefte = liste.reduce(function (s, d) { return s + (d.menge || 0); }, 0);
+  $('trefferInfo').textContent = '– ' + liste.length + ' von ' + APP.daten.length + ' Ausgaben · ' + hefte + ' Hefte · Wert ' +
+    euro(summe(liste, 'wertGes')) + ' · KI ' + euro(summe(liste, 'kiWertStk', true));
+  $('ansicht-tabelle').classList.toggle('aktiv', APP.ansicht === 'tabelle');
+  $('ansicht-kacheln').classList.toggle('aktiv', APP.ansicht === 'kacheln');
+  if (APP.ansicht === 'tabelle') tabelleZeichnen(liste); else kachelnZeichnen(liste);
+}
+function ansicht(welche) { APP.ansicht = welche; neuZeichnen(); }
+function quelleSymbol(d) {
+  if (d.wertQuelle === 'KI-Schätzung') return '<span title="nur KI-Schätzung">🤖 </span>';
+  if (d.wertQuelle) return '<span title="' + esc(d.wertQuelle) + '">📖 </span>';
+  return '';
+}
+function tabelleZeichnen(liste) {
+  const spalten = [
+    ['', '', false], ['serie', 'Serie', false], ['nr', 'Nr.', false], ['titel', 'Titel / Ausgabe', false], ['verlag', 'Verlag', false],
+    ['jahr', 'Jahr', false], ['zustand', 'Zustand', false], ['menge', 'Menge', true], ['ek', 'EK/Stk.', true],
+    ['z1', 'CG Z1', true], ['wertStk', 'Wert/Stk.', true], ['kiWertStk', '🤖 KI/Stk.', true], ['wertGes', 'Wert gesamt', true], ['gewinn', 'Gewinn', true]
+  ];
+  const kopf = '<tr>' + spalten.map(function (s) {
+    if (!s[0]) return '<th></th>';
+    const pfeil = APP.sortSpalte === s[0] ? ' ' + (APP.sortAuf ? '▲' : '▼') : '';
+    return '<th class="' + (s[2] ? 'zahl' : '') + '" onclick="sortKlick(\'' + s[0] + '\')">' + s[1] + pfeil + '</th>';
+  }).join('') + '</tr>';
+  const zeilen = liste.slice(0, 1500).map(function (d) {
+    const g = zahl(d.gewinn);
+    return '<tr class="zeile" onclick="detailOeffnenId(\'' + esc(d.id) + '\')">' +
+      '<td>' + (d.thumb ? '<img class="mini" loading="lazy" src="' + esc(d.thumb) + '" alt="">' : '<img class="mini" alt="">') + '</td>' +
+      '<td><b>' + (d.serie ? esc(d.serie) : '<i>(noch nicht erkannt)</i>') + '</b>' + statusSymbol(d) + ohneBesitzer(d) + '</td><td>' + esc(d.nr) + '</td>' +
+      '<td>' + esc(d.titel) + (d.auflage ? ' <span class="klein">(' + esc(d.auflage) + ')</span>' : '') + '</td><td>' + esc(d.verlag) + '</td>' +
+      '<td>' + esc(d.jahr) + '</td><td><span class="zbadge">' + esc(d.zustand) + '</span></td>' +
+      '<td class="zahl">' + d.menge + '</td><td class="zahl">' + euro(zahl(d.ek)) + '</td><td class="zahl">' + euro(zahl(d.z1)) + '</td>' +
+      '<td class="zahl">' + quelleSymbol(d) + euro(zahl(d.wertStk)) + '</td><td class="zahl kifarbe">' + euro(zahl(d.kiWertStk)) + '</td>' +
+      '<td class="zahl"><b>' + euro(zahl(d.wertGes)) + '</b></td>' +
+      '<td class="zahl ' + (g > 0 ? 'plus' : (g < 0 ? 'minus' : '')) + '">' + euro(g) + '</td></tr>';
+  }).join('');
+  $('liste').innerHTML = liste.length
+    ? '<table class="liste">' + kopf + zeilen + '</table>' + (liste.length > 1500 ? '<p class="klein">Es werden die ersten 1500 angezeigt – bitte filtern.</p>' : '')
+    : '<p class="klein">Keine Comics gefunden.</p>';
+}
+function kachelnZeichnen(liste) {
+  $('liste').innerHTML = liste.length ? '<div class="kacheln">' + liste.slice(0, 1500).map(function (d) {
+    return '<div class="kachel" onclick="detailOeffnenId(\'' + esc(d.id) + '\')">' +
+      (d.thumb ? '<img loading="lazy" src="' + esc(d.thumb) + '" alt="">' : '<img alt="">') +
+      '<div class="t">' + (d.serie ? esc(d.serie) + ' ' + esc(d.nr) : '(noch nicht erkannt)') + statusSymbol(d) + ohneBesitzer(d) + '</div>' +
+      '<div class="klein">' + esc(d.jahr) + ' · <span class="zbadge">' + esc(d.zustand) + '</span> · ' + d.menge + ' Stk.</div>' +
+      '<div>' + quelleSymbol(d) + '<b>' + euro(zahl(d.wertStk)) + '</b> <span class="kifarbe">· 🤖 ' + euro(zahl(d.kiWertStk)) + '</span></div></div>';
+  }).join('') + '</div>' : '<p class="klein">Keine Comics gefunden.</p>';
+}
+
+// ----- Mehrere löschen -----
+function mehrLoeschenFragen() {
+  const liste = APP.aktuell || [];
+  if (!filterAktiv()) { meldung('Bitte zuerst filtern (z. B. Serie auswählen). Ohne Filter würde alles gelöscht.', true); return; }
+  if (!liste.length) { meldung('Keine Einträge im Filter.', true); return; }
+  const hefte = liste.reduce(function (s, d) { return s + (d.menge || 0); }, 0);
+  const serien = {}; liste.forEach(function (d) { serien[d.serie || '(nicht erkannt)'] = 1; });
+  const namen = Object.keys(serien);
+  $('mehrLoeschText').textContent = liste.length + ' Einträge (' + hefte + ' Hefte) wirklich löschen? Serie(n): ' +
+    namen.slice(0, 5).join(', ') + (namen.length > 5 ? ' … und ' + (namen.length - 5) + ' weitere' : '');
+  $('mehrLoeschFrage').classList.remove('versteckt');
+}
+function mehrLoeschen() {
+  const ids = (APP.aktuell || []).map(function (d) { return d.id; });
+  if (!ids.length) return;
+  $('mehrLoeschFrage').classList.add('versteckt');
+  laden(true, 'Löschen …');
+  server('loeschenMehrere', APP.pin, ids).then(function (r) {
+    laden(false);
+    APP.daten = APP.daten.filter(function (d) { return ids.indexOf(d.id) < 0; });
+    filterZuruecksetzen();
+    meldung(r.meldung);
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+
+// ----- CSV-Export -----
+function csvExport() {
+  const liste = APP.aktuell || [];
+  const felder = [['serie', 'Serie'], ['nr', 'Heft-Nr.'], ['titel', 'Titel'], ['auflage', 'Auflage / Ausgabe'], ['verlag', 'Verlag'], ['jahr', 'Jahr'], ['format', 'Format'],
+    ['zeichner', 'Zeichner'], ['texter', 'Texter'], ['zustand', 'Zustand'], ['menge', 'Menge'], ['ek', 'EK je Stück'], ['ekGesamt', 'EK gesamt'],
+    ['cgZ0', 'CG Z0'], ['z1', 'Sammlerpreis Z1'], ['cgZ2', 'CG Z2'], ['cgZ3', 'CG Z3'], ['cgZ4', 'CG Z4'], ['kiWert', 'KI-Schätzung Z1'],
+    ['wertStk', 'Wert je Stück'], ['wertQuelle', 'Wertquelle'], ['kiWertStk', 'KI-Wert je Stück'], ['wertGes', 'Wert gesamt'], ['ebay', 'eBay Median'], ['gewinn', 'Gewinn'],
+    ['cgUrl', 'Comic-Guide-Link'], ['notiz', 'Notiz']];
+  const zelle = function (v) {
+    if (typeof v === 'number') return String(v).replace('.', ',');
+    const t = String(v === undefined || v === null ? '' : v);
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+  const zeilen = [felder.map(function (f) { return zelle(f[1]); }).join(';')].concat(liste.map(function (d) {
+    return felder.map(function (f) { return zelle(d[f[0]]); }).join(';');
+  }));
+  const blob = new Blob(['﻿' + zeilen.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Comic-Sammlung.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ==========================================================
+//  WERTE: Kennzahlen, Diagramme, Top-Liste
+// ==========================================================
+function werteZeichnen() {
+  const liste = APP.daten;
+  const hefte = liste.reduce(function (s, d) { return s + (d.menge || 0); }, 0);
+  const ek = summe(liste, 'ekGesamt'), wert = summe(liste, 'wertGes'), kiWert = summe(liste, 'kiWertStk', true);
+  const ebay = summe(liste, 'ebay', true), gewinn = summe(liste, 'gewinn');
+  const ohneZ1 = liste.filter(function (d) { return zahl(d.z1) === null; }).length;
+  const pruefen = liste.filter(zuPruefen).length;
+  const serien = {}; liste.forEach(function (d) { if (d.serie) serien[d.serie] = 1; });
+  const k = function (w, was, klasse) { return '<div class="kpi ' + (klasse || '') + '"><div class="wert">' + w + '</div><div class="was">' + was + '</div></div>'; };
+  $('kpis').innerHTML =
+    k(liste.length, 'verschiedene Ausgaben') + k(hefte, 'Hefte gesamt') + k(Object.keys(serien).length, 'Serien') +
+    k(euro(ek), 'Einkaufswert') + k(euro(wert), '📖 Sammlerwert (Comic Guide)') + k(euro(kiWert), '🤖 Wert laut KI-Schätzung', 'ki') +
+    k(euro(ebay), 'eBay-Marktwert') + k(euro(gewinn), 'Gewinn / Verlust', gewinn > 0 ? 'plus' : (gewinn < 0 ? 'minus' : '')) +
+    k(ohneZ1, 'ohne Comic-Guide-Preis') + k(pruefen, 'zu prüfen (KI)', pruefen ? 'minus' : '');
+  diagrammeZeichnen(liste);
+  const top = liste.slice().sort(function (a, b) { return (zahl(b.wertGes) || 0) - (zahl(a.wertGes) || 0); })
+    .filter(function (d) { return zahl(d.wertGes); }).slice(0, 10);
+  $('topListe').innerHTML = top.length ? top.map(function (t) {
+    return '<div class="eintrag" onclick="detailOeffnenId(\'' + esc(t.id) + '\')">' + (t.thumb ? '<img loading="lazy" src="' + esc(t.thumb) + '" alt="">' : '<img alt="">') +
+      '<div class="info"><div class="titel">' + esc(t.serie) + ' ' + esc(t.nr) + '</div>' +
+      '<div class="klein">' + esc(t.zustand) + ' · ' + t.menge + ' Stk. · ' + esc(t.jahr) + '</div></div>' +
+      '<div class="rechts"><b>' + euro(t.wertGes) + '</b><br><span class="kifarbe">🤖 ' + euro(zahl(t.kiWertStk) !== null ? t.kiWertStk * t.menge : '') + '</span></div></div>';
+  }).join('') : '<p class="klein">Noch keine Werte vorhanden.</p>';
+}
+function gruppieren(liste, schluessel) {
+  const g = {};
+  liste.forEach(function (d) {
+    const key = schluessel(d) || 'unbekannt';
+    g[key] = g[key] || { name: key, hefte: 0, wert: 0 };
+    g[key].hefte += d.menge || 0;
+    g[key].wert += zahl(d.wertGes) || 0;
+  });
+  return Object.keys(g).map(function (key) { return g[key]; });
+}
+function balkenHtml(gruppen, mass, klickFn, maxAnzahl, festeReihenfolge) {
+  if (!festeReihenfolge) gruppen.sort(function (a, b) { return b[mass] - a[mass]; });
+  gruppen = gruppen.slice(0, maxAnzahl || 12);
+  APP.balken[klickFn] = gruppen;
+  const max = Math.max.apply(null, gruppen.map(function (g) { return g[mass]; }).concat([0]));
+  if (!gruppen.length || max === 0) return '<p class="klein">Keine Daten' + (mass === 'wert' ? ' (Preise fehlen noch)' : '') + '.</p>';
+  return gruppen.map(function (g, i) {
+    const breite = max ? Math.round(g[mass] / max * 100) : 0;
+    return '<div class="balken-zeile" onclick="balkenKlick(\'' + klickFn + '\',' + i + ')" title="' + esc(g.name) + '">' +
+      '<div class="balken-name">' + esc(g.name) + '</div>' +
+      '<div class="balken-spur"><div class="balken" style="width:' + breite + '%"></div></div>' +
+      '<div class="balken-wert">' + (mass === 'wert' ? euro(g[mass]) : g[mass] + ' Stk.') + '</div></div>';
+  }).join('');
+}
+function diagrammeZeichnen(liste) {
+  document.querySelectorAll('.umschalter[data-diagramm]').forEach(function (el) {
+    const d = el.getAttribute('data-diagramm');
+    el.innerHTML = ['hefte', 'wert'].map(function (m) {
+      return '<button class="' + (APP.diagrammMass[d] === m ? 'aktiv' : '') + '" onclick="massWechseln(\'' + d + '\',\'' + m + '\')">' + (m === 'hefte' ? 'Hefte' : 'Wert') + '</button>';
+    }).join('');
+  });
+  const gz = gruppieren(liste, function (d) { return d.zustand; });
+  const nachZustand = APP.zustaende.map(function (z) {
+    return gz.filter(function (x) { return x.name === z[0]; })[0] || { name: z[0], hefte: 0, wert: 0 };
+  });
+  $('d-zustand').innerHTML = balkenHtml(nachZustand, APP.diagrammMass.zustand, 'klickZustand', 9, true);
+  $('d-serie').innerHTML = balkenHtml(gruppieren(liste, function (d) { return serienBasis(d.serie); }), APP.diagrammMass.serie, 'klickSerie', 10);
+  $('d-verlag').innerHTML = balkenHtml(gruppieren(liste, function (d) { return d.verlag; }), APP.diagrammMass.verlag, 'klickVerlag', 10);
+  const jz = gruppieren(liste, function (d) { const j = ganzeZahl(d.jahr); return j && j > 1900 ? Math.floor(j / 10) * 10 + 'er' : 'unbekannt'; });
+  jz.sort(function (a, b) { return a.name.localeCompare(b.name); });
+  $('d-jahrzehnt').innerHTML = balkenHtml(jz, APP.diagrammMass.jahrzehnt, 'klickJahrzehnt', 12, true);
+}
+function balkenKlick(fn, i) {
+  const g = APP.balken[fn] && APP.balken[fn][i];
+  if (!g) return;
+  APP.tab = 'sammlung';                 // damit filterZuruecksetzen nicht zu früh zeichnet
+  FILTER_FELDER.forEach(function (id) { $(id).value = ''; });
+  FILTER_HAKEN.forEach(function (id) { $(id).checked = false; });
+  APP.filterZustand = {};
+  auswahlListenFuellen();
+  window[fn](g.name);
+  zeigeTab('sammlung');
+}
+function massWechseln(diagramm, mass) { APP.diagrammMass[diagramm] = mass; werteZeichnen(); }
+function klickZustand(code) { APP.filterZustand = {}; APP.filterZustand[code] = true; }
+function klickSerie(name) {
+  // Gibt es die Serie genau so? Sonst eine Auswahl "alle Auflagen" ergänzen
+  const sel = $('f-serie');
+  if (!Array.prototype.some.call(sel.options, function (o) { return o.value === name; })) {
+    const o = document.createElement('option'); o.value = name; o.textContent = name + ' (alle Auflagen)'; sel.appendChild(o);
+  }
+  sel.value = name;
+}
+function klickVerlag(name) { $('f-verlag').value = name; }
+function klickJahrzehnt(name) {
+  const j = parseInt(name, 10);
+  if (isNaN(j)) return;
+  $('f-jahrVon').value = j; $('f-jahrBis').value = j + 9;
+}
+
+// ==========================================================
+//  DETAIL-FENSTER (für alle Reiter gleich)
+// ==========================================================
+function detailOeffnenId(id) {
+  const e = APP.daten.filter(function (d) { return d.id === id; })[0];
+  if (e && !APP.datenAlt) { detailOeffnenMit(e); return; }
+  datenLaden().then(function () {
+    const x = APP.daten.filter(function (d) { return d.id === id; })[0];
+    if (x) detailOeffnenMit(x); else meldung('Eintrag nicht gefunden.', true);
+  });
+}
+function detailOeffnenMit(eintrag) {
+  APP.detail = eintrag;
+  detailZeichnen();
+  $('detail').style.display = 'block';
+  $('detail').scrollTop = 0;
+}
+function detailSchliessen() {
+  $('detail').style.display = 'none';
+  APP.detail = null;
+}
+// Eintrag nach einer Änderung überall aktualisieren
+function eintragErsetzen(neu) {
+  if (!neu) return;
+  let gefunden = false;
+  for (let i = 0; i < APP.daten.length; i++) if (APP.daten[i].id === neu.id) { APP.daten[i] = neu; gefunden = true; break; }
+  if (!gefunden) APP.datenAlt = true;
+  Q.liste.forEach(function (e) { if (e.id === neu.id || (e.eintrag && e.eintrag.id === neu.id)) e.eintrag = neu; });
+  warteschlangeZeichnen();
+  if (APP.detail && APP.detail.id === neu.id) { APP.detail = neu; detailZeichnen(); }
+  if (APP.tab === 'sammlung') { auswahlListenFuellen(); neuZeichnen(); }
+  if (APP.tab === 'werte') werteZeichnen();
+}
+function preisTabelle(d) {
+  const zelle = function (z, w) {
+    const aktiv = d.zustand === z || (d.zustand && d.zustand.length > 2 && d.zustand.indexOf(z.charAt(1)) >= 0);
+    return '<td class="' + (aktiv ? 'aktiv' : '') + '">' + z + '<br>' + (zahl(w) === null ? '–' : euro(w)) + '</td>';
+  };
+  return '<table class="preistab"><tr>' + zelle('Z0', d.cgZ0) + zelle('Z1', d.z1) + zelle('Z2', d.cgZ2) + zelle('Z3', d.cgZ3) + zelle('Z4', d.cgZ4) + '</tr></table>';
+}
+function detailZeichnen() {
+  const d = APP.detail;
+  if (!d) return;
+  const zKnoepfe = APP.zustaende.map(function (z) {
+    return '<button class="zbtn' + (z[0] === d.zustand ? ' gewaehlt' : '') + '" onclick="detailZustand(\'' + z[0] + '\')"><b>' + z[0] + '</b><span>' + esc(z[1]) + '</span></button>';
+  }).join('');
+  const bilder = [];
+  if (d.eigenesFoto && d.bild) bilder.push('<figure><img src="' + esc(d.bild) + '" alt=""><figcaption>📷 Dein Foto</figcaption></figure>');
+  if (d.cgBild) bilder.push('<figure><img src="' + esc(d.cgBild) + '" alt="" onerror="this.parentNode.style.display=\'none\'"><figcaption>📖 Original laut Comic Guide</figcaption></figure>');
+  const info = [
+    ['Format', d.format], ['Zeichner', d.zeichner], ['Texter', d.texter], ['Originaltitel', d.originaltitel],
+    ['Coverpreis', d.coverpreis], ['EAN / ISBN', d.ean],
+    ['Preisschild auf Foto', zahl(d.preisschild) !== null ? euro(d.preisschild) + (d.preisFrage && d.preisFrage !== 'offen' ? ' (' + d.preisFrage + ')' : '') : ''],
+    ['KI-Vorschlag', d.zustandKi ? d.zustandKi + (zahl(d.kiSicherheit) !== null ? ' (Sicherheit ' + d.kiSicherheit + ' %)' : '') : ''],
+    ['KI-Status', d.status], ['Comic Guide', d.cgStand || 'noch nicht abgefragt – passiert automatisch im Hintergrund'],
+    ['Erfasst', d.angelegt], ['Geändert', d.geaendert]
+  ].filter(function (x) { return x[1]; });
+  const g = zahl(d.gewinn);
+  $('detailInhalt').innerHTML =
+    '<div class="karte">' +
+      '<div class="reihe"><h2 style="margin:0">' + (d.serie ? esc(d.serie) + ' ' + esc(d.nr) : '(noch nicht erkannt)') + '</h2><span class="rechts"></span>' +
+      '<button class="btn btn-hell" onclick="detailSchliessen()">✖ Schließen</button></div>' +
+      (d.titel || d.auflage ? '<div class="klein" style="margin-top:3px">' + esc(d.titel) + (d.auflage ? ' · <b>' + esc(d.auflage) + '</b>' : '') + '</div>' : '') +
+      (d.preisFrage === 'offen' ? '<div class="preis-frage-detail">💶 <b>Preisschild auf dem Foto: ' + euro(d.preisschild) + '</b> – hast du das Heft selbst zu diesem Preis gekauft?' +
+        '<div class="leiste"><button class="btn btn-gruen" onclick="preisschildAntwort(\'' + esc(d.id) + '\', true)">✅ Ja, als Einkaufspreis</button>' +
+        '<button class="btn btn-hell" onclick="preisschildAntwort(\'' + esc(d.id) + '\', false)">✖ Nein</button></div></div>' : '') +
+      (APP.verwalter && !d.besitzer ? '<div class="reihe" style="margin-top:8px;padding:8px;background:#fff8e1;border-radius:10px"><b>👤 Wem gehört dieses Heft?</b>' +
+        APP.namen.map(function (n) { return '<button class="btn btn-hell" onclick="detailZuordnen(\'' + esc(n) + '\')">' + esc(n) + '</button>'; }).join('') + '</div>' : '') +
+      (bilder.length ? '<div class="bilder" style="margin-top:10px">' + bilder.join('') + '</div>' : '') +
+      (d.beschreibung ? '<p class="klein">' + esc(d.beschreibung) + '</p>' : '') +
+    '</div>' +
+    '<div class="karte"><h2>💶 Wert je Stück im Zustand ' + esc(d.zustand || '?') + '</h2>' +
+      '<div class="wertkarten">' +
+        '<div class="wertkarte"><div class="was">📖 Comic Guide</div><div class="gross">' + euro(zahl(d.wertStk)) + '</div>' +
+          '<div class="klein">' + (d.wertQuelle ? 'Quelle: ' + esc(d.wertQuelle) : 'noch kein Preis') + '</div></div>' +
+        '<div class="wertkarte ki"><div class="was">🤖 KI-Schätzung</div><div class="gross">' + euro(zahl(d.kiWertStk)) + '</div>' +
+          '<div class="klein">' + (zahl(d.kiWert) !== null ? 'KI schätzt Z1 auf ' + euro(d.kiWert) : 'wird im Hintergrund ergänzt') + '</div></div>' +
+      '</div>' +
+      preisTabelle(d) +
+      '<div class="zahlen">' +
+        '<div class="zahl-karte"><div class="wert">' + euro(zahl(d.wertGes)) + '</div><div class="was">Wert gesamt (' + d.menge + ' Stk.)</div></div>' +
+        '<div class="zahl-karte"><div class="wert">' + euro(zahl(d.ekGesamt)) + '</div><div class="was">Einkauf gesamt</div></div>' +
+        '<div class="zahl-karte"><div class="wert ' + (g > 0 ? 'plus' : (g < 0 ? 'minus' : '')) + '">' + euro(g) + '</div><div class="was">Gewinn / Verlust</div></div>' +
+        '<div class="zahl-karte"><div class="wert">' + euro(zahl(d.ebay)) + '</div><div class="was">eBay Median' + (d.ebayAnzahl !== '' ? ' (' + d.ebayAnzahl + ')' : '') + '</div></div>' +
+      '</div>' +
+      '<div class="leiste">' +
+        '<button class="btn btn-hell" onclick="detailCgHolen()">📖 Comic-Guide-Preis neu holen</button>' +
+        (d.cgSerieId ? '<button class="btn btn-hell" onclick="detailZurSerie()">📚 Ganze Serie ansehen</button>' : '') +
+      '</div>' +
+      '<p class="klein"><a target="_blank" href="' + esc(d.cgLink) + '">📖 Comic Guide</a> · <a target="_blank" href="' + esc(d.ebayLink) + '">eBay</a> · <a target="_blank" href="' + esc(d.chLink) + '">ComicHunters</a></p>' +
+    '</div>' +
+    '<div class="karte"><h2>Zustand</h2><div class="zustaende">' + zKnoepfe + '</div>' +
+      '<h2 style="margin-top:14px">Anzahl</h2><div class="menge"><button onclick="detailMenge(-1)">−</button><div class="zahl">' + d.menge + '</div><button onclick="detailMenge(1)">+</button></div>' +
+    '</div>' +
+    '<div class="karte"><h2>Angaben korrigieren</h2>' +
+      '<div class="felder">' +
+        '<div><label>Serie</label><input id="d-serie" type="text" value="' + esc(d.serie) + '"></div>' +
+        '<div><label>Heft-Nr.</label><input id="d-nr" type="text" value="' + esc(d.nr) + '"></div>' +
+        '<div><label>Jahr / Jahrgang</label><input id="d-jahr" type="text" inputmode="numeric" value="' + esc(d.jahr) + '"></div>' +
+        '<div><label>Auflage / Ausgabe</label><input id="d-auflage" type="text" list="auflagen" placeholder="z. B. 1. Auflage" value="' + esc(d.auflage) + '"></div>' +
+        '<div><label>Titel</label><input id="d-titel" type="text" value="' + esc(d.titel) + '"></div>' +
+        '<div><label>Verlag</label><input id="d-verlag" type="text" value="' + esc(d.verlag) + '"></div>' +
+        (APP.verwalter ? '<div><label>Besitzer (nur Verwalter)</label><select id="d-besitzer"><option value="">❓ noch nicht zugeordnet</option>' +
+          APP.namen.map(function (n) { return '<option value="' + esc(n) + '"' + (n === d.besitzer ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></div>' : '') +
+        '<div><label>Einkaufspreis je Stück €</label><input id="d-ek" type="text" inputmode="decimal" value="' + esc(zahl(d.ek) !== null ? d.ek : '') + '"></div>' +
+        '<div><label>Sammlerpreis Z1 (Comic Guide) €</label><input id="d-z1" type="text" inputmode="decimal" value="' + esc(zahl(d.z1) !== null ? d.z1 : '') + '"></div>' +
+      '</div>' +
+      '<label>Notiz</label><input id="d-notiz" type="text" value="' + esc(d.notiz) + '">' +
+      '<p class="klein">Werden Serie, Nummer, Jahr oder Auflage geändert, holt die App den passenden Comic-Guide-Preis und eine neue KI-Schätzung automatisch.</p>' +
+      '<div class="leiste">' +
+        '<button class="btn btn-haupt" onclick="detailSpeichern()">💾 Speichern</button>' +
+        '<button class="btn btn-hell" onclick="detailNeuErkennen()">🔁 Nochmal von der KI erkennen</button>' +
+        '<span class="rechts"></span>' +
+        '<button class="btn btn-rot" onclick="$(\'loeschFrage\').classList.remove(\'versteckt\')">🗑️ Löschen</button>' +
+      '</div>' +
+      '<div id="loeschFrage" class="versteckt" style="margin-top:10px">Wirklich löschen? Fotos wandern in den Drive-Papierkorb. ' +
+        '<button class="btn btn-rot" onclick="detailLoeschen()">Ja, löschen</button> <button class="btn btn-hell" onclick="$(\'loeschFrage\').classList.add(\'versteckt\')">Nein</button></div>' +
+      '<div class="info-liste">' + info.map(function (x) { return '<div>' + x[0] + '</div><div>' + esc(x[1]) + '</div>'; }).join('') + '</div>' +
+    '</div>';
+}
+// Änderung sofort auf dem Handy anzeigen; das Speichern läuft im Hintergrund
+function lokalAendern(id, f) {
+  const alt = APP.daten.filter(function (d) { return d.id === id; })[0] || (APP.detail && APP.detail.id === id ? APP.detail : null);
+  if (!alt) return null;
+  const neu = Object.assign({}, alt, f);
+  eintragErsetzen(neu);
+  return alt;
+}
+function detailMenge(delta) {
+  const id = APP.detail.id;
+  const menge = Math.max(0, (Number(APP.detail.menge) || 0) + delta);
+  const alt = lokalAendern(id, { menge: menge });
+  meldung('Menge: ' + menge);
+  server('mengeAendern', APP.pin, id, delta).then(function (neu) {
+    eintragErsetzen(neu);
+  }).catch(function (e) { if (alt) eintragErsetzen(alt); meldung('Nicht gespeichert: ' + fehlerText(e), true); });
+}
+function detailZustand(code) {
+  const id = APP.detail.id;
+  const alt = lokalAendern(id, { zustand: code });
+  meldung('Zustand: ' + code);
+  server('aendern', APP.pin, id, { zustand: code }).then(function (neu) {
+    eintragErsetzen(neu);
+  }).catch(function (e) { if (alt) eintragErsetzen(alt); meldung('Nicht gespeichert: ' + fehlerText(e), true); });
+}
+function detailSpeichern() {
+  const f = {
+    serie: $('d-serie').value, nr: $('d-nr').value, titel: $('d-titel').value, verlag: $('d-verlag').value,
+    jahr: $('d-jahr').value, auflage: $('d-auflage').value, ek: $('d-ek').value, z1: $('d-z1').value, notiz: $('d-notiz').value
+  };
+  if ($('d-besitzer')) f.besitzer = $('d-besitzer').value;
+  laden(true, 'Speichern …');
+  server('aendern', APP.pin, APP.detail.id, f).then(function (neu) {
+    laden(false);
+    if (neu && neu.besitzer && neu.besitzer !== APP.benutzer.name) {
+      // gehört jetzt jemand anderem -> aus der eigenen Ansicht entfernen
+      eintragWeg(neu.id);
+      meldung('👤 Gehört jetzt ' + neu.besitzer + ' und ist in dessen Sammlung.');
+      return;
+    }
+    eintragErsetzen(neu);
+    if (neu && neu.serie && !neu.cgStand) {
+      // Heft wurde geändert -> Preis still im Hintergrund neu holen
+      meldung('✅ Gespeichert – neuer Comic-Guide-Preis wird geholt …');
+      server('cgAktualisieren', APP.pin, neu.id).then(function (r) {
+        if (r && r.eintrag) { eintragErsetzen(r.eintrag); meldung(r.cg && r.cg.gefunden ? '📖 Neuer Comic-Guide-Preis da' : '❔ Im Comic Guide nicht gefunden – KI-Schätzung wird genutzt'); }
+      }).catch(function () { /* der Hintergrund-Job macht es später */ });
+    } else {
+      meldung('✅ Gespeichert');
+    }
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function detailNeuErkennen() {
+  laden(true, '🤖 KI erkennt nochmal und fragt den Comic Guide … (bis zu 1 Minute)');
+  server('erkennen', APP.pin, APP.detail.id, true).then(function (r) {
+    laden(false);
+    if (r && r.eintrag) { eintragErsetzen(r.eintrag); meldung(r.status || '✅ Erkannt'); }
+    else meldung((r && r.fehler) || 'Erkennung läuft bereits – bitte gleich nochmal öffnen.', true);
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function detailCgHolen() {
+  laden(true, '📖 Frage den Comic Guide … (bis zu 1 Minute)');
+  server('cgAktualisieren', APP.pin, APP.detail.id).then(function (r) {
+    laden(false);
+    if (!r || r.fehlt) { meldung('Eintrag nicht gefunden.', true); return; }
+    eintragErsetzen(r.eintrag);
+    meldung(r.cg && r.cg.gefunden ? '✅ Comic-Guide-Preise geholt' : '❔ ' + ((r.cg && r.cg.grund) || 'Nicht gefunden') + ' – KI-Schätzung wird genutzt', !(r.cg && r.cg.gefunden));
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function detailLoeschen() {
+  const id = APP.detail.id;
+  laden(true, 'Löschen …');
+  server('loeschen', APP.pin, id).then(function (r) {
+    laden(false); meldung(r.meldung);
+    APP.daten = APP.daten.filter(function (d) { return d.id !== id; });
+    Q.liste.forEach(function (e) { if (e.id === id) { e.phase = 'weg'; e.text = 'gelöscht'; e.eintrag = null; } });
+    warteschlangeZeichnen();
+    detailSchliessen();
+    if (APP.tab === 'sammlung') { auswahlListenFuellen(); neuZeichnen(); }
+    if (APP.tab === 'werte') werteZeichnen();
+    if (APP.tab === 'serien' && APP.kat.serie) serieNeuLaden();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+// ----- Hefte einem Benutzer zuordnen (nur Verwalter) -----
+function eintragWeg(id) {
+  APP.daten = APP.daten.filter(function (d) { return d.id !== id; });
+  Q.liste.forEach(function (e) { if (e.id === id) { e.phase = 'weg'; e.text = 'einem anderen Benutzer zugeordnet'; e.eintrag = null; } });
+  warteschlangeZeichnen();
+  detailSchliessen();
+  if (APP.tab === 'sammlung') { auswahlListenFuellen(); neuZeichnen(); }
+  if (APP.tab === 'werte') werteZeichnen();
+}
+function detailZuordnen(name) {
+  const id = APP.detail.id;
+  laden(true, 'Zuordnen …');
+  server('zuordnen', APP.pin, [id], name).then(function (r) {
+    laden(false); meldung(r.meldung);
+    if (name !== APP.benutzer.name) { eintragWeg(id); return; }
+    const d = APP.daten.filter(function (x) { return x.id === id; })[0] || APP.detail;
+    d.besitzer = name;
+    eintragErsetzen(d);
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function mehrZuordnen() {
+  const liste = APP.aktuell || [];
+  const ziel = $('zuordnenZiel').value;
+  if (!filterAktiv()) { meldung('Bitte zuerst filtern (z. B. Serie oder „noch nicht zugeordnet“).', true); return; }
+  if (!liste.length) { meldung('Keine Einträge im Filter.', true); return; }
+  const ids = liste.map(function (d) { return d.id; });
+  laden(true, ids.length + ' Hefte werden ' + ziel + ' zugeordnet …');
+  server('zuordnen', APP.pin, ids, ziel).then(function (r) {
+    laden(false); meldung(r.meldung);
+    if (ziel === APP.benutzer.name) APP.daten.forEach(function (d) { if (ids.indexOf(d.id) >= 0) d.besitzer = ziel; });
+    else APP.daten = APP.daten.filter(function (d) { return ids.indexOf(d.id) < 0; });
+    auswahlListenFuellen(); neuZeichnen();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+
+// ----- Benutzer verwalten (nur Verwalter) -----
+function benutzerOeffnen() {
+  laden(true, 'Benutzer werden geladen …');
+  server('benutzerListe', APP.pin).then(function (r) {
+    laden(false);
+    APP.detail = null;
+    $('detailInhalt').innerHTML =
+      '<div class="karte"><div class="reihe"><h2 style="margin:0">👥 Benutzer</h2><span class="rechts"></span>' +
+        '<button class="btn btn-hell" onclick="detailSchliessen()">✖ Schließen</button></div>' +
+        '<p class="klein">Jeder Benutzer meldet sich mit seiner eigenen PIN an und sieht nur seine eigene Sammlung. Der Serien-Katalog wird gemeinsam genutzt.</p>' +
+        r.benutzer.map(function (b, i) {
+          return '<div class="benutzer-zeile"><div><b>' + esc(b.name) + '</b>' + (b.admin ? ' <span class="zbadge">Verwalter</span>' : '') +
+            '<div class="klein">' + b.hefte + ' Einträge · ' + (b.hatPin ? '🔒 PIN gesetzt' : '<span style="color:var(--rot)">noch keine PIN – kann sich noch nicht anmelden</span>') + '</div>' +
+            '<div class="reihe" style="margin-top:6px">' +
+              '<input id="bn-name-' + i + '" type="text" value="' + esc(b.name) + '" style="width:150px" placeholder="Name">' +
+              '<input id="bn-pin-' + i + '" type="text" inputmode="numeric" style="width:150px" placeholder="neue PIN (mind. 4 Ziffern)">' +
+              '<button class="btn btn-haupt" onclick="benutzerAendern(' + i + ',\'' + esc(b.name) + '\')">💾</button>' +
+              (b.admin ? '' : '<button class="btn btn-rot" onclick="$(\'bn-loe-' + i + '\').classList.remove(\'versteckt\')">🗑️</button>') +
+            '</div>' +
+            '<div id="bn-loe-' + i + '" class="versteckt" style="margin-top:6px">„' + esc(b.name) + '“ löschen? Die Hefte bleiben erhalten und sind danach „noch nicht zugeordnet“. ' +
+              '<button class="btn btn-rot" onclick="benutzerEntfernen(\'' + esc(b.name) + '\')">Ja, löschen</button> ' +
+              '<button class="btn btn-hell" onclick="$(\'bn-loe-' + i + '\').classList.add(\'versteckt\')">Nein</button></div>' +
+          '</div></div>';
+        }).join('') +
+      '</div>' +
+      '<div class="karte"><h2>➕ Neuer Benutzer</h2><div class="reihe">' +
+        '<input id="bn-neu-name" type="text" placeholder="Name, z. B. Tessa" class="wachsen">' +
+        '<input id="bn-neu-pin" type="text" inputmode="numeric" placeholder="PIN (mind. 4 Ziffern)" class="wachsen">' +
+        '<button class="btn btn-gruen" onclick="benutzerNeu()">Anlegen</button></div></div>' +
+      (r.ohneBesitzer ? '<div class="karte"><h2>❓ Noch nicht zugeordnet: ' + r.ohneBesitzer + ' Einträge</h2>' +
+        '<p class="klein">Diese Hefte wurden vor der Umstellung gescannt. Nur du als Verwalter siehst sie. Ordne sie in der Sammlung zu: Filter „Besitzer → noch nicht zugeordnet“, dann einzeln im Heft „Wem gehört dieses Heft?“ antippen oder unten „Alle gefilterten zuordnen“.</p>' +
+        '<button class="btn btn-haupt" onclick="nichtZugeordneteZeigen()">Jetzt zuordnen</button></div>' : '');
+    $('detail').style.display = 'block';
+    $('detail').scrollTop = 0;
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function benutzerAendern(i, alterName) {
+  const d = { alterName: alterName, name: $('bn-name-' + i).value, pin: $('bn-pin-' + i).value };
+  laden(true, 'Speichern …');
+  server('benutzerSpeichern', APP.pin, d).then(function (r) {
+    laden(false); meldung(r.meldung);
+    if (alterName === APP.eigenerName) {
+      // eigene PIN geändert -> neu merken (Ansicht bleibt gleich)
+      if (d.pin.trim()) {
+        const als = APP.pin.indexOf('>') >= 0 ? APP.pin.slice(APP.pin.indexOf('>')) : '';
+        APP.echtePin = d.pin.trim(); APP.pin = APP.echtePin + als; speicherSchreiben('comicPin', APP.echtePin);
+      }
+    } else if (alterName === APP.benutzer.name && d.name.trim() !== alterName) {
+      // gerade angesehener Benutzer wurde umbenannt
+      APP.pin = APP.echtePin + '>' + d.name.trim();
+    }
+    namenNeuLaden();
+    benutzerOeffnen();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function benutzerNeu() {
+  const d = { name: $('bn-neu-name').value, pin: $('bn-neu-pin').value };
+  laden(true, 'Anlegen …');
+  server('benutzerSpeichern', APP.pin, d).then(function (r) {
+    laden(false); meldung(r.meldung); namenNeuLaden(); benutzerOeffnen();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function benutzerEntfernen(name) {
+  laden(true, 'Löschen …');
+  if (name === APP.benutzer.name && APP.benutzer.verwalter) { meldung('Bitte zuerst zurück in deine eigene Sammlung wechseln.', true); laden(false); return; }
+  server('benutzerLoeschen', APP.pin, name).then(function (r) {
+    laden(false); meldung(r.meldung); APP.datenAlt = true; namenNeuLaden(); benutzerOeffnen();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function namenNeuLaden() {
+  server('anmelden', APP.pin).then(function (r) {
+    benutzerAnzeigen(r);
+  }).catch(function () { /* egal */ });
+}
+function nichtZugeordneteZeigen() {
+  detailSchliessen();
+  zeigeTab('sammlung');
+  datenSicherstellen().then(function () {
+    auswahlListenFuellen();
+    $('f-besitzer').value = '-';
+    $('filterBox').setAttribute('open', '');
+    neuZeichnen();
+  });
+}
+function detailZurSerie() {
+  const sid = APP.detail.cgSerieId;
+  detailSchliessen();
+  zeigeTab('serien');
+  serieOeffnen(sid);
+}
+
+// ==========================================================
+//  SERIEN-KATALOG
+// ==========================================================
+// ----- Auflagen: mehrere Comic-Guide-Serien, die nur verschiedene Auflagen derselben Reihe sind -----
+// "Clever & Smart (Album , 1. Auflage)" -> "Clever & Smart (Album)"
+function serienBasis(name) {
+  return String(name || '')
+    .replace(/\s*[,;:\-–]?\s*\d+\.\s*Auflage\b/gi, '')
+    .replace(/\(\s*[,;]?\s*\)/g, '')
+    .replace(/\(\s+/g, '(').replace(/\s*,\s*\)/g, ')').replace(/\s+\)/g, ')')
+    .replace(/\s{2,}/g, ' ').trim();
+}
+// "Clever & Smart (Album , 3. Auflage)" -> "3. Auflage"
+function serienAuflage(name) {
+  const m = String(name || '').match(/(\d+)\.\s*Auflage/i);
+  return m ? m[1] + '. Auflage' : 'Erstausgabe';
+}
+function auflageNr(label) { const n = parseInt(label, 10); return isNaN(n) ? 1 : n; }
+// Serien-Liste in Gruppen aufteilen: gleiche Grundbezeichnung + mindestens eine "Auflage" im Namen
+function serienGruppieren(liste) {
+  const g = {};
+  liste.forEach(function (s) { const b = serienBasis(s.name); (g[b] = g[b] || []).push(s); });
+  const erg = [];
+  Object.keys(g).forEach(function (b) {
+    const mitglieder = g[b];
+    if (mitglieder.length > 1 && mitglieder.some(function (s) { return /\d+\.\s*Auflage/i.test(s.name); })) {
+      mitglieder.sort(function (a, c) { return auflageNr(serienAuflage(a.name)) - auflageNr(serienAuflage(c.name)); });
+      erg.push({ gruppe: true, name: b, mitglieder: mitglieder });
+    } else mitglieder.forEach(function (s) { erg.push(s); });
+  });
+  return erg.sort(function (a, c) { return a.name.localeCompare(c.name, 'de'); });
+}
+// Mehrere Serien (Auflagen) zu einer gemeinsamen Ansicht zusammenführen
+function gruppeZusammenfuehren(name, ergebnisse) {
+  const hefte = [];
+  const besitzNummer = {};
+  ergebnisse.forEach(function (r) { r.hefte.forEach(function (h) { if (h.status === 'ja') besitzNummer[h.nummer] = true; }); });
+  ergebnisse.forEach(function (r, i) {
+    const aufl = serienAuflage(r.serie.name);
+    r.hefte.forEach(function (h) {
+      const x = Object.assign({}, h);
+      x.aufl = aufl; x.serieId = r.serie.id;
+      x.zusatz = aufl + (h.zusatz ? ' · ' + h.zusatz : '');
+      x.status = h.status === 'ja' ? 'ja' : (besitzNummer[h.nummer] ? 'nummer' : '');
+      // Sortierung: gleiche Nummer der verschiedenen Auflagen direkt nebeneinander
+      x.pos = ((Number(h.jahr) || 0) * 100000 + (h.nr === '' || h.nr === null ? 99999 : Number(h.nr))) * 100 + i + (Number(h.pos) || 0) / 1e7;
+      hefte.push(x);
+    });
+  });
+  hefte.sort(function (a, b) { return a.pos - b.pos; });
+  const ser = ergebnisse.map(function (r) { return r.serie; });
+  const zahlen = function (f) { return ser.map(function (s) { return Number(s[f]); }).filter(function (v) { return !isNaN(v) && v > 0; }); };
+  const von = zahlen('von'), bis = zahlen('bis');
+  const offen = ser.filter(function (s) { return String(s.status || '').indexOf('✅') !== 0; })[0];
+  const verlage = ser.map(function (s) { return s.verlag; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+  return {
+    serie: {
+      id: 'gruppe:' + name, name: name, gruppe: true,
+      auflagen: ser.map(function (s) { return serienAuflage(s.name); }),
+      verlag: verlage.join(' / '), von: von.length ? Math.min.apply(null, von) : '',
+      bis: ser.some(function (s) { return s.bis === 'läuft'; }) ? 'läuft' : (bis.length ? Math.max.apply(null, bis) : ''),
+      gesamt: ser.reduce(function (a, s) { return a + (Number(s.gesamt) || 0); }, 0),
+      geladen: ser.reduce(function (a, s) { return a + (Number(s.geladen) || 0); }, 0),
+      status: offen ? offen.status : '✅ vollständig'
+    },
+    hefte: hefte
+  };
+}
+// Eine Serie ODER eine Auflagen-Gruppe holen
+function serieHolen(id) {
+  id = String(id);
+  if (id.indexOf('gruppe:') !== 0) return server('katalogSerie', APP.pin, id);
+  const name = id.slice(7);
+  const ids = APP.kat.gruppen[name] || [];
+  if (!ids.length) return Promise.reject(new Error('Diese Serien-Gruppe gibt es nicht mehr.'));
+  return Promise.all(ids.map(function (sid) { return server('katalogSerie', APP.pin, sid); }))
+    .then(function (liste) { return gruppeZusammenfuehren(name, liste.filter(Boolean)); });
+}
+// Zusammengefasste Zahlen einer Gruppe (nur wenn die Daten schon in der App sind)
+function gruppeKennzahlen(name, mitglieder) {
+  if (!APP.fb) return null;
+  const liste = mitglieder.map(function (s) { return lokalKatalogSerie(s.id); });
+  if (liste.some(function (r) { return !r; })) return null;
+  const n = {};
+  gruppeZusammenfuehren(name, liste).hefte.forEach(function (x) {
+    const e = n[x.nummer] = n[x.nummer] || { besitz: false, z1: null };
+    if (x.status === 'ja') e.besitz = true;
+    const z = x.z1 === '' || x.z1 === null || x.z1 === undefined ? null : Number(x.z1);
+    if (z !== null && (e.z1 === null || z < e.z1)) e.z1 = z;
+  });
+  let vorhanden = 0, wf = 0;
+  const keys = Object.keys(n);
+  keys.forEach(function (k) { if (n[k].besitz) vorhanden++; else wf += n[k].z1 || 0; });
+  return { nummern: keys.length, vorhanden: vorhanden, wertFehlend: Math.round(wf * 100) / 100 };
+}
+
+function serienUebersichtLaden() {
+  server('katalogUebersicht', APP.pin).then(function (r) {
+    APP.kat.serien = r.serien;
+    serienListeZeichnen();
+    // Solange noch Serien laden: alle 30 Sekunden auffrischen
+    clearTimeout(APP.kat.timer);
+    if (r.serien.some(function (s) { return s.status.indexOf('✅') !== 0; })) {
+      APP.kat.timer = setTimeout(function () { if (APP.tab === 'serien' && !APP.kat.serie) serienUebersichtLaden(); }, 30000);
+    }
+  }).catch(function (e) { $('serienListe').textContent = fehlerText(e); });
+}
+function serienListeZeichnen() {
+  const liste = serienGruppieren(APP.kat.serien);
+  if (!liste.length) {
+    $('serienListe').innerHTML = '<p class="klein">Noch keine Serien. Scanne ein Heft oder suche unten eine Serie im Comic Guide.</p>';
+    return;
+  }
+  APP.kat.gruppen = {};
+  // Lösch-Rückfrage (für einzelne Serien und einzelne Auflagen gleich)
+  const entfernenBox = function (s) {
+    const sid = esc(s.id);
+    return '<div id="entf-' + sid + '" class="versteckt" style="grid-column:1/-1;background:#fff5f5;border:1px solid var(--rot);border-radius:10px;padding:8px;margin-top:6px">' +
+      'Serie „' + esc(s.name) + '“ aus dem Katalog entfernen? Deine Comics in der Sammlung bleiben erhalten. ' +
+      '<button class="btn btn-rot" onclick="serieEntfernen(\'' + sid + '\')">Ja, entfernen</button> ' +
+      '<button class="btn btn-hell" onclick="$(\'entf-' + sid + '\').classList.add(\'versteckt\')">Nein</button></div>';
+  };
+  $('serienListe').innerHTML = liste.map(function (s) {
+    if (s.gruppe) return gruppeZeileHtml(s, entfernenBox);
+    const laedt = s.status.indexOf('✅') !== 0;
+    const anteil = s.nummern ? Math.round(s.vorhanden / s.nummern * 100) : 0;
+    const sid = esc(s.id);
+    const komplett = !laedt && s.nummern > 0 && s.vorhanden >= s.nummern;
+    const oeffnen = ' onclick="serieOeffnen(\'' + sid + '\')"';
+    return '<div class="serie-zeile' + (komplett ? ' komplett' : '') + '">' +
+      (s.cover ? '<img class="serie-cover" loading="lazy" src="' + esc(s.cover) + '" alt=""' + oeffnen + '>'
+               : '<div class="serie-cover"' + oeffnen + '>📚</div>') +
+      '<div><div class="name"' + oeffnen + '>' + esc(s.name) + '</div>' +
+        '<div class="klein">' + esc(s.verlag) + (s.von ? ' · ' + esc(s.von) + (s.bis ? '–' + esc(s.bis) : '') : '') +
+        (laedt ? ' · <span class="st st-arbeit"><span class="punkt"></span>' + esc(s.status) + '</span>' : ' · ' + s.gesamt + ' Einträge im Comic Guide') + '</div>' +
+        '<div class="serie-zahl">' + s.vorhanden + ' / ' + s.nummern + ' Hefte (' + anteil + ' %)</div>' +
+        '<div class="fortschritt"><div style="width:' + anteil + '%"></div></div>' +
+        (komplett ? '<div class="serie-komplett">✓ Komplett!</div>'
+                  : '<div class="klein">' + (s.nummern - s.vorhanden) + ' fehlen · Wert der fehlenden ≈ ' + euro(s.wertFehlend) + '</div>') +
+      '</div>' +
+      '<div class="reihe"><button class="btn btn-haupt" onclick="serieOeffnen(\'' + sid + '\')">Öffnen</button>' +
+        '<button class="btn btn-hell" title="Serie aus dem Katalog entfernen" onclick="serieEntfernenFragen(\'' + sid + '\')">🗑️</button></div>' +
+      entfernenBox(s) +
+      '</div>';
+  }).join('');
+}
+// Eine Karte für alle Auflagen einer Reihe
+function gruppeZeileHtml(g, entfernenBox) {
+  APP.kat.gruppen[g.name] = g.mitglieder.map(function (s) { return String(s.id); });
+  const gid = 'gruppe:' + g.name;
+  const oeffnen = ' onclick="serieOeffnen(' + esc(JSON.stringify(gid)) + ')"';
+  const m = g.mitglieder;
+  const cover = (m.filter(function (s) { return s.cover && s.vorhanden; })[0] || m.filter(function (s) { return s.cover; })[0] || {}).cover;
+  const verlage = m.map(function (s) { return s.verlag; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+  const von = m.map(function (s) { return Number(s.von); }).filter(function (v) { return v > 0; });
+  const bis = m.map(function (s) { return Number(s.bis); }).filter(function (v) { return v > 0; });
+  const laufend = m.some(function (s) { return s.bis === 'läuft'; });
+  const k = gruppeKennzahlen(g.name, m);
+  const anteil = k && k.nummern ? Math.round(k.vorhanden / k.nummern * 100) : 0;
+  const komplett = k && k.nummern > 0 && k.vorhanden >= k.nummern;
+  return '<div class="serie-zeile' + (komplett ? ' komplett' : '') + '">' +
+    (cover ? '<img class="serie-cover" loading="lazy" src="' + esc(cover) + '" alt=""' + oeffnen + '>' : '<div class="serie-cover"' + oeffnen + '>📚</div>') +
+    '<div><div class="name"' + oeffnen + '>' + esc(g.name) + '<span class="serie-gruppe-marke">' + m.length + ' Auflagen</span></div>' +
+      '<div class="klein">' + esc(verlage.join(' / ')) + (von.length ? ' · ' + Math.min.apply(null, von) + '–' + (laufend ? 'läuft' : (bis.length ? Math.max.apply(null, bis) : '')) : '') + '</div>' +
+      (k ? '<div class="serie-zahl">' + k.vorhanden + ' / ' + k.nummern + ' Nummern – egal welche Auflage (' + anteil + ' %)</div>' +
+           '<div class="fortschritt"><div style="width:' + anteil + '%"></div></div>' +
+           (komplett ? '<div class="serie-komplett">✓ Jede Nummer mindestens einmal vorhanden!</div>'
+                     : '<div class="klein">' + (k.nummern - k.vorhanden) + ' Nummern fehlen in allen Auflagen · Wert ≈ ' + euro(k.wertFehlend) + '</div>') : '') +
+      m.map(function (s) {
+        const sid = esc(s.id);
+        const a = s.nummern ? Math.round(s.vorhanden / s.nummern * 100) : 0;
+        const laedt = s.status.indexOf('✅') !== 0;
+        return '<div class="aufl-zeile"><span class="aufl-name">' + esc(serienAuflage(s.name)) + '</span>' +
+          '<span>' + s.vorhanden + ' / ' + s.nummern + (laedt ? ' · ' + esc(s.status) : '') + '</span>' +
+          '<div class="fortschritt"><div style="width:' + a + '%"></div></div>' +
+          '<button class="btn btn-hell" onclick="serieOeffnen(\'' + sid + '\')">Nur diese</button>' +
+          '<button class="btn btn-hell" title="Diese Auflage aus dem Katalog entfernen" onclick="serieEntfernenFragen(\'' + sid + '\')">🗑️</button></div>' +
+          entfernenBox(s);
+      }).join('') +
+    '</div>' +
+    '<div class="reihe"><button class="btn btn-haupt"' + oeffnen + '>Alle Auflagen öffnen</button></div>' +
+    '</div>';
+}
+function serieEntfernenFragen(id) { $('entf-' + id).classList.remove('versteckt'); }
+function serieEntfernen(id) {
+  laden(true, 'Entfernen …');
+  server('katalogSerieEntfernen', APP.pin, id).then(function (r) {
+    laden(false); meldung(r.meldung); serienUebersichtLaden();
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function katalogSuche() {
+  const t = $('katSuche').value.trim();
+  if (t.length < 2) { meldung('Bitte mindestens 2 Buchstaben eingeben.', true); return; }
+  $('katSuchErgebnis').innerHTML = '<p class="klein">Suche im Comic Guide …</p>';
+  server('katalogSuchen', APP.pin, t).then(function (liste) {
+    APP.kat.suche = liste;
+    $('katSuchErgebnis').innerHTML = liste.length ? liste.map(function (s, i) {
+      return '<div class="eintrag" style="cursor:default"><div class="info"><div class="titel">' + esc(s.name) + '</div>' +
+        '<div class="klein">' + esc(s.verlag) + (s.von ? ' · ' + s.von + (s.bis ? '–' + (s.bis === 9999 ? 'heute' : s.bis) : '') : '') + '</div></div>' +
+        (s.imKatalog ? '<button class="btn btn-hell" onclick="serieOeffnen(\'' + esc(s.id) + '\')">✓ im Katalog – öffnen</button>'
+                     : '<button class="btn btn-haupt" onclick="serieHinzufuegen(' + i + ')">➕ Hinzufügen</button>') + '</div>';
+    }).join('') : '<p class="klein">Nichts gefunden.</p>';
+  }).catch(function (e) { $('katSuchErgebnis').textContent = fehlerText(e); });
+}
+function serieHinzufuegen(i) {
+  const s = APP.kat.suche[i];
+  laden(true, '📖 Lade die ersten Hefte von „' + s.name + '“ … Der Rest folgt im Hintergrund.');
+  server('katalogSerieHinzufuegen', APP.pin, s).then(function (r) {
+    laden(false); meldung(r.meldung);
+    serieOeffnen(s.id);
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+
+// ----- Eine Serie -----
+function serieOeffnen(id) {
+  laden(true, 'Serie wird geladen …');
+  serieHolen(id).then(function (r) {
+    laden(false);
+    const neueSerie = !APP.kat.serie || APP.kat.serie.id !== r.serie.id;
+    APP.kat.serie = r.serie;
+    APP.kat.hefte = r.hefte;
+    if (neueSerie) {
+      APP.kat.auswahl = {}; APP.kat.anzeige = 'alle'; APP.kat.letzter = null; APP.kat.auflage = '';
+      ['k-suche', 'k-nrVon', 'k-nrBis', 'k-jahrVon', 'k-jahrBis', 'k-preisAb'].forEach(function (f) { $(f).value = ''; });
+      $('k-sort').value = 'pos';
+    }
+    $('serien-uebersicht').classList.add('versteckt');
+    $('serie-detail').classList.remove('versteckt');
+    katZeichnen(neueSerie);
+    window.scrollTo(0, 0);
+    // Serie lädt noch? Alle 30 Sekunden nachsehen
+    clearTimeout(APP.kat.timer);
+    if (r.serie.status.indexOf('✅') !== 0) {
+      APP.kat.timer = setTimeout(function () { serieOeffnenStill(r.serie.id); }, 30000);
+    }
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function serieOeffnenStill(id) {
+  if (APP.tab !== 'serien' || !APP.kat.serie || APP.kat.serie.id !== id) return;
+  serieHolen(id).then(function (r) {
+    if (!APP.kat.serie || APP.kat.serie.id !== r.serie.id) return;
+    APP.kat.serie = r.serie; APP.kat.hefte = r.hefte;
+    katZeichnen(false);
+    clearTimeout(APP.kat.timer);
+    if (r.serie.status.indexOf('✅') !== 0) APP.kat.timer = setTimeout(function () { serieOeffnenStill(id); }, 30000);
+  }).catch(function () { /* egal */ });
+}
+function serieNeuLaden() { if (APP.kat.serie) serieOeffnen(APP.kat.serie.id); }
+function serieSchliessen() {
+  APP.kat.serie = null; APP.kat.hefte = []; APP.kat.auswahl = {};
+  clearTimeout(APP.kat.timer);
+  $('auswahlLeiste').classList.add('versteckt');
+  $('serie-detail').classList.add('versteckt');
+  $('serien-uebersicht').classList.remove('versteckt');
+  serienUebersichtLaden();
+}
+function katAnzeige(a) { APP.kat.anzeige = a; katZeichnen(true); }
+function katAuflage(a) { APP.kat.auflage = a; katZeichnen(true); }
+function katGefiltert() {
+  const h = APP.kat.hefte;
+  const ohneSonder = $('k-ohneSonder').checked;
+  const suche = $('k-suche').value.toLowerCase().split(/\s+/).filter(String);
+  const nrVon = parseFloat($('k-nrVon').value), nrBis = parseFloat($('k-nrBis').value);
+  const jVon = parseFloat($('k-jahrVon').value), jBis = parseFloat($('k-jahrBis').value);
+  const preisAb = parseFloat($('k-preisAb').value);
+  const liste = h.filter(function (x) {
+    if (APP.kat.auflage && x.aufl !== APP.kat.auflage) return false;
+    if (APP.kat.anzeige === 'vorhanden' && !x.status) return false;
+    if (APP.kat.anzeige === 'fehlend' && x.status) return false;
+    if (ohneSonder && x.sonder && x.status !== 'ja') return false;   // eigene Hefte immer zeigen
+    if (!isNaN(nrVon) && (x.nr === '' || x.nr < nrVon)) return false;
+    if (!isNaN(nrBis) && (x.nr === '' || x.nr > nrBis)) return false;
+    if (!isNaN(jVon) && (x.jahr === '' || x.jahr < jVon)) return false;
+    if (!isNaN(jBis) && (x.jahr === '' || x.jahr > jBis)) return false;
+    if (!isNaN(preisAb) && !(x.z1 !== '' && x.z1 >= preisAb)) return false;
+    if (suche.length) {
+      const t = (x.band + ' ' + x.zusatz).toLowerCase();
+      for (let i = 0; i < suche.length; i++) if (t.indexOf(suche[i]) < 0) return false;
+    }
+    return true;
+  });
+  const sort = $('k-sort').value;
+  const nrWert = function (x) { return (x.jahr || 0) * 100000 + (x.nr === '' ? 99999 : x.nr); };
+  if (sort === 'nr') liste.sort(function (a, b) { return nrWert(a) - nrWert(b) || a.pos - b.pos; });
+  if (sort === 'nr-ab') liste.sort(function (a, b) { return nrWert(b) - nrWert(a) || a.pos - b.pos; });
+  if (sort === 'preis-ab') liste.sort(function (a, b) { return (b.z1 === '' ? -1 : b.z1) - (a.z1 === '' ? -1 : a.z1); });
+  return liste;
+}
+// Kennzahlen je Nummer (mehrere Ausgaben derselben Nummer zählen einmal)
+function katKennzahlen() {
+  const nummern = {};
+  APP.kat.hefte.forEach(function (x) {
+    const n = nummern[x.nummer] = nummern[x.nummer] || { besitz: false, z1: null };
+    if (x.status === 'ja') n.besitz = true;
+    if (x.z1 !== '' && (n.z1 === null || x.z1 < n.z1)) n.z1 = x.z1;
+  });
+  let vorhanden = 0, wertFehlend = 0, wertVorhanden = 0;
+  const keys = Object.keys(nummern);
+  keys.forEach(function (k) { if (nummern[k].besitz) { vorhanden++; wertVorhanden += nummern[k].z1 || 0; } else wertFehlend += nummern[k].z1 || 0; });
+  return { nummern: keys.length, vorhanden: vorhanden, fehlend: keys.length - vorhanden, wertFehlend: wertFehlend, wertVorhanden: wertVorhanden };
+}
+function katZeichnen(zurueck) {
+  const s = APP.kat.serie;
+  if (!s) return;
+  if (zurueck) APP.kat.zeigen = 200;
+  $('serieTitel').textContent = s.name;
+  const laedt = s.status.indexOf('✅') !== 0;
+  $('serieInfo').innerHTML = esc(s.verlag) + (s.von ? ' · ' + esc(s.von) + (s.bis ? '–' + esc(s.bis) : '') : '') + ' · ' +
+    (laedt ? '<span class="st st-arbeit"><span class="punkt"></span>' + esc(s.status) + ' – die Liste füllt sich automatisch</span>' : s.gesamt + ' Einträge im Comic Guide') +
+    (s.gruppe ? '<div style="margin-top:6px">Hier siehst du <b>alle Auflagen zusammen</b>. Dunkelgrün = genau diese Auflage hast du, hellgrün „≈ andere Aufl.“ = die Nummer hast du schon in einer anderen Auflage.</div>' +
+      '<div class="aufl-knoepfe">' + [''].concat(s.auflagen).map(function (a) {
+        return '<button class="' + (APP.kat.auflage === a ? 'aktiv' : '') + '" onclick="katAuflage(' + esc(JSON.stringify(a)) + ')">' + (a ? esc(a) : 'Alle Auflagen') + '</button>';
+      }).join('') + '</div>' : '');
+  const k = katKennzahlen();
+  const anteil = k.nummern ? Math.round(k.vorhanden / k.nummern * 100) : 0;
+  const kp = function (w, was, klasse) { return '<div class="kpi ' + (klasse || '') + '"><div class="wert">' + w + '</div><div class="was">' + was + '</div></div>'; };
+  $('serieKpis').innerHTML = kp(k.vorhanden, s.gruppe ? '✓ Nummern vorhanden (egal welche Auflage)' : '✓ Nummern vorhanden', 'plus') + kp(k.fehlend, '✗ Nummern fehlen', 'minus') +
+    kp(anteil + ' %', 'komplett') + kp(euro(k.wertVorhanden), 'Wert vorhanden (Z1)') + kp(euro(k.wertFehlend), 'Wert der Fehlenden (Z1)');
+  document.querySelectorAll('#katAnzeige button').forEach(function (b) { b.classList.toggle('aktiv', b.getAttribute('data-a') === APP.kat.anzeige); });
+  $('k-jahrBox').classList.toggle('versteckt', !APP.kat.hefte.some(function (x) { return x.jahr !== ''; }));
+
+  const liste = katGefiltert();
+  APP.kat.gefiltert = liste;
+  $('katTrefferInfo').textContent = liste.length + ' von ' + APP.kat.hefte.length + ' Einträgen angezeigt';
+  const zeige = liste.slice(0, APP.kat.zeigen);
+  $('katRaster').innerHTML = zeige.length ? zeige.map(function (x) {
+    const gew = !!APP.kat.auswahl[x.b];
+    const klasse = x.status === 'ja' ? 'st-ja' : (x.status === 'nummer' ? 'st-nummer' : 'st-fehlt');
+    const eigen = x.comics[0];
+    const stueck = x.comics.reduce(function (s2, c) { return s2 + c.menge; }, 0);
+    const marke = x.status === 'ja' ? '<span class="marke">✓ ' + esc(eigen.zustand) + (stueck > 1 ? ' · ' + stueck + '×' : '') + '</span>'
+      : (x.status === 'nummer' ? (s.gruppe ? '<span class="marke nummer" title="Diese Nummer hast du in einer anderen Auflage">≈ andere Aufl.</span>' : '<span class="marke nummer" title="Du hast diese Nummer in einer anderen Ausgabe">≈ andere Ausg.</span>') : '<span class="marke fehlt">fehlt</span>');
+    return '<div class="kat-kachel ' + klasse + (gew ? ' gewaehlt' : '') + '" onclick="katKlick(event,\'' + x.b + '\')">' +
+      '<div class="haken">' + (gew ? '✓' : '') + '</div>' + marke +
+      (x.cover ? '<img loading="lazy" src="https://www.comicguide.de/pics/small/' + x.b + '.jpg" alt="" onerror="this.outerHTML=\'<div class=ohne-bild>📕</div>\'">' : '<div class="ohne-bild">📕</div>') +
+      '<div class="kb">' + esc(x.band || '–') + '</div>' +
+      '<div class="kz">' + esc(x.zusatz) + '</div>' +
+      '<div class="kp">' + (x.z1 !== '' ? 'Z1 ' + euro(x.z1) : '') +
+        (x.status === 'ja' ? ' · <a href="#" onclick="event.stopPropagation();event.preventDefault();detailOeffnenId(\'' + esc(eigen.id) + '\')">Details</a>' : '') + '</div>' +
+      '</div>';
+  }).join('') : '<p class="klein">' + (APP.kat.hefte.length ? 'Keine Hefte für diesen Filter.' : 'Die Hefte werden gerade aus dem Comic Guide geladen …') + '</p>';
+  $('katMehr').innerHTML = liste.length > APP.kat.zeigen
+    ? '<button class="btn btn-hell" onclick="APP.kat.zeigen+=200;katZeichnen(false)">Weitere 200 anzeigen (' + (liste.length - APP.kat.zeigen) + ' übrig)</button>' : '';
+  auswahlLeisteZeichnen();
+}
+function katAuswahlAnzahl() { return Object.keys(APP.kat.auswahl).length; }
+function katKlick(ev, b) {
+  const liste = APP.kat.gefiltert;
+  if (ev.shiftKey && APP.kat.letzter) {
+    // Bereich zwischen letztem Klick und diesem Heft auswählen
+    const i1 = liste.findIndex(function (x) { return x.b === APP.kat.letzter; });
+    const i2 = liste.findIndex(function (x) { return x.b === b; });
+    if (i1 >= 0 && i2 >= 0) {
+      for (let i = Math.min(i1, i2); i <= Math.max(i1, i2); i++) APP.kat.auswahl[liste[i].b] = true;
+    }
+  } else {
+    if (APP.kat.auswahl[b]) delete APP.kat.auswahl[b]; else APP.kat.auswahl[b] = true;
+  }
+  APP.kat.letzter = b;
+  katZeichnen(false);
+}
+function katAlleWaehlen() { APP.kat.gefiltert.forEach(function (x) { APP.kat.auswahl[x.b] = true; }); katZeichnen(false); }
+function katFehlendeWaehlen() { APP.kat.gefiltert.forEach(function (x) { if (!x.status) APP.kat.auswahl[x.b] = true; }); katZeichnen(false); }
+function katAuswahlAufheben() { APP.kat.auswahl = {}; $('eintragenPanel').classList.add('versteckt'); $('entfernenPanel').classList.add('versteckt'); katZeichnen(false); }
+function auswahlLeisteZeichnen() {
+  const n = katAuswahlAnzahl();
+  $('auswahlLeiste').classList.toggle('versteckt', !(n && APP.tab === 'serien'));
+  if (!n) return;
+  const gewaehlt = APP.kat.hefte.filter(function (x) { return APP.kat.auswahl[x.b]; });
+  const fehlend = gewaehlt.filter(function (x) { return x.status !== 'ja'; }).length;
+  $('auswahlText').textContent = n + ' ausgewählt (' + fehlend + ' noch nicht in der Sammlung)';
+}
+function katEintragenPanel() {
+  $('entfernenPanel').classList.add('versteckt');
+  $('eintragenPanel').classList.toggle('versteckt');
+}
+function katEintragen() {
+  const gewaehlt = APP.kat.hefte.filter(function (x) { return APP.kat.auswahl[x.b] && x.status !== 'ja'; });
+  if (!gewaehlt.length) { meldung('Alle ausgewählten Hefte sind schon in der Sammlung.', true); return; }
+  laden(true, gewaehlt.length + ' Hefte werden eingetragen …');
+  // Nach Serie (Auflage) sortieren – der Server trägt immer nur Hefte einer Serie auf einmal ein
+  const jeSerie = {};
+  gewaehlt.forEach(function (x) { const sid = x.serieId || APP.kat.serie.id; (jeSerie[sid] = jeSerie[sid] || []).push(x.b); });
+  const optionen = { zustand: $('k-zustand').value, ek: $('k-ek').value, menge: $('k-menge').value };
+  const meldungen = [];
+  Object.keys(jeSerie).reduce(function (kette, sid) {
+    return kette.then(function () {
+      return server('katalogVorhanden', APP.pin, sid, jeSerie[sid], optionen).then(function (r) { meldungen.push(r.meldung); });
+    });
+  }, Promise.resolve())
+    .then(function () {
+      laden(false); meldung(meldungen.join(' ') + ' Genaue Preise und KI-Schätzungen kommen im Hintergrund dazu.');
+      APP.datenAlt = true;
+      APP.kat.auswahl = {};
+      $('eintragenPanel').classList.add('versteckt');
+      serieOeffnen(APP.kat.serie.id);
+    }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+function katEntfernenFragen() {
+  $('eintragenPanel').classList.add('versteckt');
+  const comics = [];
+  APP.kat.hefte.forEach(function (x) { if (APP.kat.auswahl[x.b] && x.status === 'ja') x.comics.forEach(function (c) { comics.push(c); }); });
+  if (!comics.length) { meldung('Unter den ausgewählten Heften ist keins in deiner Sammlung.', true); return; }
+  APP.kat.entfernen = comics.map(function (c) { return c.id; });
+  $('entfernenText').textContent = comics.length + ' Einträge aus der Sammlung löschen? Eigene Fotos wandern in den Drive-Papierkorb.';
+  $('entfernenPanel').classList.remove('versteckt');
+}
+function katEntfernen() {
+  const ids = APP.kat.entfernen || [];
+  if (!ids.length) return;
+  laden(true, 'Entfernen …');
+  server('loeschenMehrere', APP.pin, ids).then(function (r) {
+    laden(false); meldung(r.meldung);
+    APP.datenAlt = true;
+    APP.kat.auswahl = {};
+    $('entfernenPanel').classList.add('versteckt');
+    serieOeffnen(APP.kat.serie.id);
+  }).catch(function (e) { laden(false); meldung(fehlerText(e), true); });
+}
+
+// ==========================================================
+//  Start
+// ==========================================================
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') detailSchliessen(); });
+if (speicherLesen('comicPin')) anmelden(true);
 </script>
 </body>
 </html>
