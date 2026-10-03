@@ -20,12 +20,12 @@
 <body>
 <!--
   Comic-Scanner – Startseite auf GitHub Pages
-  Diese kleine Seite holt die eigentliche App direkt aus dem Google-Skript
-  (ohne Google-Anmeldung) und zeigt sie an. Alle Daten bleiben in der
-  Google-Tabelle. Ohne PIN kommt niemand an eine Sammlung.
-  Änderungen an der App macht man im Google-Skript – hier muss nichts geändert werden.
+  Diese kleine Seite holt die eigentliche App aus dem Google-Skript (ohne Google-Anmeldung)
+  und merkt sie sich auf dem Gerät. Ab dem zweiten Öffnen startet die App sofort aus dem
+  Speicher; im Hintergrund wird die neueste Fassung für das nächste Öffnen geholt.
+  Die Daten selbst kommen aus Firebase und der Google-Tabelle. Ohne PIN kommt niemand an eine Sammlung.
   WICHTIG: Hier keine globalen Namen anlegen (alles steckt in einer Klammer-Funktion),
-  sonst gibt es Namenskonflikte mit der geladenen App und sie startet nicht.
+  sonst gibt es Namenskonflikte mit der geladenen App.
 -->
 <div class="lade" id="lade">
   <div style="font-size:48px">📚</div>
@@ -36,25 +36,41 @@
 (function () {
   // Adresse der Google-Web-App (Comic-Scanner)
   var adresse = 'https://script.google.com/macros/s/AKfycbwlho_JTqSD5Wi21htidEj8wiJG2CLamkvDMlwva1TSPyRz4b82oV5MHX601NeHgVjC/exec';
+  var SCHLUESSEL = 'comicScannerApp';
 
-  fetch(adresse + '?roh=1', { redirect: 'follow', cache: 'no-store' })
+  var gespeichert = '';
+  try { gespeichert = localStorage.getItem(SCHLUESSEL) || ''; } catch (e) { gespeichert = ''; }
+
+  function zeigen(html) {
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  // Neueste Fassung holen und für das nächste Öffnen merken
+  var holen = fetch(adresse + '?roh=1', { redirect: 'follow', cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('Fehler ' + r.status);
       return r.text();
     })
     .then(function (html) {
       if (html.indexOf('Comic-Scanner') < 0) throw new Error('Antwort unbekannt');
-      // Die geladene App ersetzt diese Ladeseite komplett
-      document.open();
-      document.write(html);
-      document.close();
-    })
-    .catch(function (e) {
+      try { localStorage.setItem(SCHLUESSEL, html); } catch (e) { /* Speicher voll – egal */ }
+      return html;
+    });
+
+  if (gespeichert && gespeichert.indexOf('Comic-Scanner') >= 0) {
+    // Sofort starten; die neue Fassung kommt beim nächsten Öffnen
+    zeigen(gespeichert);
+    holen.catch(function () { /* egal */ });
+  } else {
+    holen.then(zeigen).catch(function (e) {
       document.getElementById('lade').innerHTML =
         '<div style="font-size:48px">📚</div>' +
         '<div>Der Comic-Scanner konnte nicht geladen werden (' + e.message + ').<br>Bitte Internet prüfen.</div>' +
         '<button onclick="location.reload()">Nochmal versuchen</button>';
     });
+  }
 })();
 </script>
 </body>
